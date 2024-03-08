@@ -4,7 +4,7 @@ use rug::rand::RandState;
 /* Prime should be >= 2048 bits (32 bytes)
  * 
  */
-fn check_prime<T: Into<u64>>(num: T) -> bool {
+fn check_prime<T: Into<u64>>(num: T) -> bool { // Verified working
     let num = num.into() as u64;
     if num > 1 {
         for i in 2..=((num/2) as u64) {

@@ -24,7 +24,7 @@ fn random_prime() -> u64 {
     let mut rng = RandState::new();
     let proposed = rng.bits(4096);
     loop {
-        if let IsPrime::Yes = proposed.is_probably_prime(30) {
+        if proposed.is_probably_prime(30) == IsPrime::Yes {
             proposed
         }
     }

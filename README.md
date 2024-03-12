@@ -1,24 +1,13 @@
 # CrabbySSH
 Rust implementation of SSH
 ## Method
-Current restrictions:
-* Password-based user authentication only
-* 
-1. Key exchange with Diffie-Hellman
-    * Agree on modulus and base number
-        * modulus is prime and >= 2048 bits, in range  [ 2<sup>(n-1)</sup>, 2<sup>n</sup> ) | n >= 2048 as per [this](https://crypto.stackexchange.com/questions/19263/generation-of-n-bit-prime-numbers-what-is-the-actual-range)
-    * Client & Server separately choose a number, and calculate a value
-    * Client & Server exchange their respective calculated values
-    * Client & Server calculate using the result received from the other 
-    * Client & Server calculate the shared secret key (which should be the same value)
+TODO
 
-2.  User authentication
-    * For now, password-based authentication will be used. Asymmetric key authentication may be
-    implemented in the future
+## The Secure Shell (SSH) Transport Layer Protocol ([RFC 4253](https://datatracker.ietf.org/doc/html/rfc4253)) Summary (by section)
+This is a summary of "The Secure Shell (SSH) Transport Layer Protocol" ([RFC 4253](https://datatracker.ietf.org/doc/html/rfc4253))
 
-3. 
+RFC 4253 details the SSH transport layer protocol, which (usually) runs on top of TCP/IP
 
-## [RFC 4253](https://datatracker.ietf.org/doc/html/rfc4253) Summary (by section)
 1. Introduction
     * Host-based authentication, user authentication not performed
     * Simple and flexible to allow parameter negotiation. The following are all negotiated:
@@ -454,7 +443,7 @@ Current restrictions:
     
     1. Algorithm Negotiation
         * Key exchange begins by each side sending the following packet:
-            | Type      | Description                             |
+            | Type      | Value                                   |
             |-----------|-----------------------------------------|
             | byte      | SSH_MSG_KEXINIT                         |
             | byte[16]  | cookie (random bytes)                   |
@@ -524,12 +513,358 @@ Current restrictions:
                 algorithm on the Client's name-lsit that is ALSO on the Server's
                 name-list.
                     * If no such algorithm is found, both sides MUST disconnect.
-                * Note that "none" must be explicitly listed if it is to be available.
-                * See Section 6.3 for defined algorithm names.
+                * "none" must be explicitly listed if it is to be acceptable
+                * See Section 6.3 for encryption algorithm names
 
             * mac_algorithms
+                * A name-list of acceptable MAC algorithms, in order of preference
+                * Client's preference MUST take priorty. I.e., The chosen MAC algorithm 
+                MUST be the first algorithm on the Client's name-list that is also
+                on the Server's name-list 
+                * If there is no such algorithm, both sides MUST disconnect
+                * "none" must be explicitly listed if it is to be acceptable
+                * See Section 6.4 for MAC algorithm names
+            
+            * compression_algorithms
+                * A name-list of compression algorithms, in order of preference
+                * Client's preference MUST take priority. I.e., The chosen compression 
+                algorithm MUST be the first algorithm on the Client's name-list that is
+                also on the Server's name-list
+                * If there is no such algorithm, both sides MUST disconnect
+                * See section 6.2 for compression algorithm names
+            
+            * languages
+                * A name-list of language tags, in order of preference
+                    * See [RFC 3066](https://datatracker.ietf.org/doc/html/rfc3066)
+                    for language identification tags
+                * Both parties MAY ignore this name-list
+                * SHOULD be empty if there are no language preferences, as defined
+                in Section 5 of [SSH-ARCH](https://datatracker.ietf.org/doc/html/rfc4253#ref-SSH-ARCH)
+                * SHOULD NOT be present unless they are known to be needed by the
+                sending party
+            
+            * first_kex_packet_follows
+                * Indicates whether a guessed key exchange packet follows
+                * TRUE if a guessed packet will be sent
+                * FALSE if a guessed packet will NOT be sent
+                * Each party will know whether their guess was right after
+                receiving the SSH_MSG_KEXINIT packet
+                * If the other party's guess was wrong, and this field was TRUE,
+                then the next packet MUST be silently ignored
+                    * Both sides MUST then act as determined by the negotiated
+                    key exchange method
+                * If the other party's guess was right, key exchange MSUT continue using
+                the guessed packet.
+
+        * After the SSH_MSG_KEXINIT message exchange:
+            * The key exchange algorithm is run
+            * This may involve several packet exchanges, as specified by the key
+            exchange method
+
+        * Once a party has sent a SSH_MSG_KEXINIT message for key exchange
+        (or re-exchange), until it has sent a SSH_MSG_NEWKEYS message (see Section 7.3)
+        it MUST NOT send any messages other than:
+            * Transport Layer Generic Messages (1 to 19)
+                * Excluding SSH_MSG_SERVICE_REQUEST and SSH_MSG_SERVICE_ACCEPT, which
+                MUST NOT be sent
+            * Algorithm Negotiation Messages (20 to 29)
+                * Excluding SSH_MSG_KEXINIT messages, which MUST NOT be sent 
+            * Specific Key Exchange Method Messages (30 to 49)
         
+        * Unrecognized messages should be responded to as defined in Section 11
+
+        * Note that during a key re-exchange, after sending each party MUST be
+        prepared to process an arbitrary number of messages that may be in-flight
+        before receiving a SSH_MSG_KEXINIT messages from the other party
+
+    2. Output from Key Exchange
+        * Key exchange produces two values:
+            1. K - a shared secret
+
+            2. H - an exchange hash
+                * The exchange hash, H, from the first key exchange is additionally
+                used as the session identifier - a unique identifier for this connection
+                    * It is used by authentication methods as part of the data that is
+                    signed as a proof of possession of a private key
+                    * Once computed, the session identifier is not changed, even if
+                    keys are later re-exchanged
+
+        * Each key exchange method specifies a hash function used in the key exchange
+            * The SAME hash algorithm MUST be used in key derivation
+
+        * Here, the hash algorithm used will be called HASH
+            * Encryption keys MUST be computed as HASH, of a known value and K,
+            as follows:
+                1. Initial IV (initialization vector) Client to Server:
+                    * HASH(K || H || "A" || session_id)
+                        * K encoded as mpint
+                        * H is the exchange hash
+                        * "A" (ASCII 65) encoded as byte
+                        * session_id encoded as raw data
+
+                2. Initial IV Server to Client
+                    * HASH(K || H || "B" || session_id)
+                        * All encoded as described above ("B" replacing "A")
                 
+                3. Encryption key Client to Server
+                   * HASH(K || H || "C" || session_id)
+                        * All encoded as described above ("C" replacing "B")
+                
+                4. Encryption key Server to Client
+                    * HASH(K || H || "D" || session_id)
+                        * All encoded as described above ("D" replacing "C")
+
+                5. Integrity key Client to Server
+                    * HASH(K || H || "E" || session_id)
+                        * All encoded as described above ("E" replacing "D")
+
+                6. Integrity key Server to Client
+                    * HASH(K || H || "F" || session_id)
+                        * All encoded as described above ("F" replacing "E")
+                
+                * Key data MUST be taken from the beginning of the HASH(...) output
+                    * As many bytes as needed are taken from the beginning of the hash
+                    value
+                    * If the key length needed is longer than the output of the HASH(...):
+                        * The Key is extended by the computed HASH(...) of the concatenation of K, H, and the entire key so far, and then appending the resulting bytes (as many as HASH generates) to the
+                        key.
+                        
+                        * The above process is repeated until enough key material is
+                        available; the key is taken from the beginning of this value.
+                        
+                        * In other words:
+                            > K1 = HASH(K || H || X || session_id)   (X is e.g., "A")
+
+                            > K2 = HASH(K || H || K1)
+                            
+                            > K3 = HASH(K || H || K1 || K2)
+
+                            > Kn = HASH(K || H || K1 || K2 || K3 || ... || K<sub>n-1</sub>)
+
+                            > key = K1 || K2 || K3 || ... || K<sub>n</sub>
+
+                        * This process will lose entropy if the amount of entropy in K
+                        is larger than the internal state size of HASH
+
+    3. Taking Keys Into Use
+        * Key exchange ends by each side sending an SSH_MSG_NEWKEYS message
+            * This message is sent with the old keys and algorithms
+            * All methods sent after this message MUST use the new keys and algorithms
+            * When this message is received, the new keys and algorithms MUST be used for
+            receiving
+            * This message ensures that a party is able to respond with an
+            SSH_MSG_DISCONNECT message that the other party can understand if something 
+            goes wrong with the key exchange
+                | Type | Value |
+                | ---- | --------------- |
+                | byte | SSH_MSG_NEWKEYS |
+
+8. Diffie-Hellman Key Exchange
+
+    0. Untitled
+        * The Diffie-Hellman (DH) key exchange provides a shared secret that cannot be
+        determined by either party alone
+        * The key exchange is combined with a signature with the host key to provide host
+        authentication
+        * This key exchange method provides Explicit Server Authentication as defined in
+        Section 7.
+        * The following steps are used to exchange a key, where:
+            * C - Client
+            * S - Server
+            * p - large safe prime
+            * g - generator for a subgroup of GF(p)
+                * GF(p) - Galois field of p 
+                * See [finite field arithmetic](https://en.wikipedia.org/wiki/Finite_field_arithmetic)
+            * q - order of the subgroup
+            * V_S - Identification string of S (Server)
+            * V_C - Identification string of C (Client)
+            * K_S - Public host key of S (Server)
+            * I_C - C's (Client's) SSH_MSG_KEXINIT message
+            * I_S - S's (Server's) SSH_MSG_KEXINIT message
+            
+                Note: Both I_C and I_S have been exchanged before this part begins
+
+            The steps are as follows:
+            
+            1. C generates random number x (where 1 < x < q):
+                1. computes e = g<sup>x</sup> mod p
+                2. C sends e to S
+            2. S generates random number y (where 0 < y < q):
+                1. Computes f = g<sup>y</sup> mod p
+                2. S receives e
+                3. S computes:
+                    * K = e<sup>y</sup> mod p
+                    * H = HASH(V_C || V_S || I_C || I_S || K_S || e || f || k)
+                        * Elements encoded according to their types; see below
+                    * signature s on H with its private host key
+                4. S sends (K_S || f || s) to C
+
+                * The signing operation may involve a second hashing operation
+            3. C verifies that K_S really is the hsot key for S (e.g., using
+            certificates or a local database).
+                * C is also allowed to accept hte key without verification
+                    * However, doing so renders the protocol insecure against active
+                    attacks
+                1. C computes:
+                    * K = f<sup>x</sup> mod p
+                    * H = HASH(V_C || V_S || I_C || I_S || K_S || e || f || K )
+                
+                2. C verifies signature s on H
+
+            * Values of 'e' or 'f' not in range [1, p-1] MUST NOT be sent or accepted by
+            either side.
+                * If this condition is violated, the key exchange fails
+
+        * This is implemented with the following messages:
+            * The hash algorithm for computing the exchange hash is defined by the method name, and is called HASH
+            * The public key algorithm for signing is negotiated with the SSH_MSG_KEXINIT
+            messages
+        
+            1. First, C sends:
+                | Type  | Value              |
+                |-------|--------------------|
+                | byte  | SSH_MSG_KEXDH_INIT |
+                | mpint | e                  |
+            
+            2. S then responds with:
+                | Type   | Value                                         |
+                |--------|-----------------------------------------------|
+                | byte   | SSH_MSG_KEXDH_REPLY                           |
+                | string | server public host key and certificates (K_S) |
+                | mpint  | f                                             |
+                | string | signature of H                                |
+                
+            3. The hash H is computed as the HASH hash of the concatenation of:
+                | Type   | Value                                        |
+                |--------|----------------------------------------------|
+                | string | V_C, Client's ID string, excluding CR and LF |
+                | string | V_S, Server's ID string, excluding CR and LF |
+                | string | I_C, the payload of Client's SSH_MSG_KEXINIT |
+                | string | I_S, the payload of Server's SSH_MSG_KEXINIT |
+                | string | K_S, the host key                            |
+                | mpint  | e, exchange value sent by Client             |
+                | mpint  | f, exchange value sent by Server             |
+                | mpint  | k, the shared secret                         |
+
+                * This value, H, is called the exchange hash
+                    * It is used to authenticate the key exchange
+                    * It SHOULD be kept secret
+                
+                * The signature algorithm MUST be applied over H, not the original
+                data
+                    * Most signature algorithms include hashing and additional padding
+                    (e.g., "ssh-dss" specifies SHA-1 hashing).
+                        * In this case, the data is first hashed with HASH to compute H,
+                        and then H is hashed with SHA-1 as part of the signing operation
+    
+    1. diffie-hellman-group1-sha1 (REQUIRED)
+        * Specifies the Diffie-Hellman key exchange with:
+            * SHA-1 as HASH
+            * Oakley Group 2 (1024-bit MODP group; see [RFC2409](https://datatracker.ietf.org/doc/html/rfc2409))
+            
+        * Note that although the method includes "group1" in the name, it uses
+        Oakley Group 2
+
+    2. diffie-hellman-group14-sha1 (REQUIRED)
+        * Specifies the Diffie-Hellman key exchange with:
+            * SHA-1 as HASH
+            * Oakley Group 14 (2048-bit MODP group; see [RFC3526](https://datatracker.ietf.org/doc/html/rfc3526))
+    
+    * To reiterate, both of the above methods MUST be supported by implementations
+
+9. Key Re-Exchange
+    * The key re-exchange process is as follows:
+        1. Send an SSH_MSG_KEXINIT when not already doing a key exchange, as described
+        in Section 7.1
+        2. When this message is received, a party MUST respond with its own
+        SSH_MSG_KEXINIT message
+            * EXCEPT when the received SSH_MSG_KEXINIT was already a reply
+
+    * Either party MAY initiate the re-exchange, but roles MUST NOT be changed
+        * I.e., the Server remains the Server, and the Client remains the Client
+        
+    * Key re-exchange is performed using whatever encryption was in effect when the
+    exchange was started
+        * Encryption, compression, and MAC methods are not changed before a new
+        SSH_MSG_NEWKEYS is sent after the key exchange (as in the initial key exchange)
+        * Re-exchange is processed identifcally to the initial key exchange
+            * EXCEPT the session identifier, which will remain unchanged
+    * Some or all of the algorithms MAY be changed DURING the re-exchange
+        * Host keys can also change
+        * All keys and initialization vectors are recomputed after the exchange
+        * Compression and encryption contexts are reset
+    
+    * It is RECOMMENDED that keys be changed after each GIGABYTE of transmitted data
+    OR after each HOUR of connection time - whichever comes sooner.
+        * However, since the re-exchange is a public key operation, it requires a fair
+        amount of processing power and should not be performed too often
+    
+    * More application data may be sent after the SSH_MSG_NEWKEYS packet has been sent
+
+    * Key exchange does not affect the protocols that lie above the SSH transport layer
+
+10. Service Request
+    * After the key exchange, the Client requests a service
+    * The service is identified by a name
+    * The format of names and procedures for defining new names are defined in [SSH-ARCH](https://datatracker.ietf.org/doc/html/rfc4253#ref-SSH-ARCH)
+    and [SSH-NUMBERS](https://datatracker.ietf.org/doc/html/rfc4253#ref-SSH-NUMBERS)
+    * The following names are currently reserved:
+        * ssh-userauth
+        * ssh-connection
+    
+    * A local service should use the PRIVATE USE syntax of "servicename@domain
+        | Type   | Value                   |
+        |--------|-------------------------|
+        | byte   | SSH_MSG_SERVICE_REQUEST |
+        | string | service name            |
+
+    * If the Server rejects the service request, it SHOULD send an appropriate
+    SSH_MSG_DISCONNECT message and MUST disconnect
+    
+    * When the service starts, it may have access to the session identifier generated
+    during the key exchange
+
+    * If the Server supports the service, and permits the Client to use it, it MUST
+    respond with:
+        | Type   | Value                   |
+        |--------|-------------------------|
+        | byte   | SSH_MSG_SERVICE_ACCEPT |
+        | string | service name            |
+    
+    * Message numbers used by services should be in the area reserved for them
+        * See [SSH-ARCH](https://datatracker.ietf.org/doc/html/rfc4253#ref-SSH-ARCH)
+        and [SSH-NUMBERS](https://datatracker.ietf.org/doc/html/rfc4253#ref-SSH-NUMBERS)
+    
+        The transport level will continue to process its own messages
+    
+    * Note: After a key exchange with Implicit Server Authentication, the Client MUST
+    wait for a response to its service request message before sending any further data
+
+11. Additional Messages
+    
+    Either party may send any of the following messages at any time:
+    1. Disconnection Message
+    2. Ignored Data Message
+    3. Debug Message
+    4. Reserved Messages
+
+12. Summary of Message Numbers
+
+13. IANA Considerations
+    * The summarized document is part of a set, including:
+        * [SSH-ARCH](https://datatracker.ietf.org/doc/html/rfc4253#ref-SSH-ARCH)
+        * [SSH-USERAUTH](https://datatracker.ietf.org/doc/html/rfc4253#ref-SSH-USERAUTH)
+        * [SSH-CONNECT](https://datatracker.ietf.org/doc/html/rfc4253#ref-SSH-CONNECT)
+        * [SSH-NUMBERS](https://datatracker.ietf.org/doc/html/rfc4253#ref-SSH-NUMBERS)
+        * the summarized document
+    * IANA considerations for the SSH protocol as defined in the above set are detailed
+    in [SSH-NUMBERS](https://datatracker.ietf.org/doc/html/rfc4253#ref-SSH-NUMBERS)
+
+14. Security considerations for this protocol are provided in [SSH-ARCH](https://datatracker.ietf.org/doc/html/rfc4253#ref-SSH-ARCH)
+
+15. References
+    * See the summarized document [RFC 4253](https://datatracker.ietf.org/doc/html/rfc4253) for references
+
 
 ## Resources
 [RFC 4253](https://datatracker.ietf.org/doc/html/rfc4253)

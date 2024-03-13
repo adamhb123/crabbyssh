@@ -47,7 +47,7 @@ RFC 4253 details the SSH transport layer protocol, which (usually) runs on top o
             * Such lines SHOULD be encoded in ISO-10646 UTF-8 (see [RFC 3629](https://datatracker.ietf.org/doc/html/rfc3629))
             * Clients MUST be able to process such lines
             * Such lines MAY be ignored, or displayed to the Client
-                * If displayed, control character filtering (see [SSH-ARCH](https://datatracker.ietf.org/doc/html/rfc4253#ref-SSH-ARCH)) SHOULD be used. This allows TCP-wrappers to display an error message prior to disconnecting
+                * If displayed, control character filtering (see [SSH-ARCH](https://datatracker.ietf.org/doc/html/rfc4251)) SHOULD be used. This allows TCP-wrappers to display an error message prior to disconnecting
         * The ID string is structured as follows:
             > SSH-{protoversion}-{softwareversion}\<SP>{comments}\<CR>\<LF>
             
@@ -259,7 +259,7 @@ RFC 4253 details the SSH transport layer protocol, which (usually) runs on top o
                 be disabled for security reasons if this cipher is chosen.
             
             <b>NOTE:</b> Additional methods may be defined as specified in
-            [SSH-ARCH](https://datatracker.ietf.org/doc/html/rfc4253#ref-SSH-ARCH) and [SSH-NUMBERS](https://datatracker.ietf.org/doc/html/rfc4253#ref-SSH-NUMBERS)
+            [SSH-ARCH](https://datatracker.ietf.org/doc/html/rfc4251) and [SSH-NUMBERS](https://datatracker.ietf.org/doc/html/rfc4250)
 
     4. Data Integrity
         * Each packet includes a MAC computed from a shared securet, packet sequence 
@@ -299,7 +299,7 @@ RFC 4253 details the SSH transport layer protocol, which (usually) runs on top o
             * "*-n" MACs (e.g., hmac-sha1-96, hmac-md5-96) use only the first n bits of the resulting value
             * SHA-1 is decribed in [FIPS-180-2](https://datatracker.ietf.org/doc/html/rfc4253#ref-FIPS-180-2)
             * MD5 is described in [RFC 1321](https://datatracker.ietf.org/doc/html/rfc1321)
-            * Additional methods may be defined as specified in [SSH-ARCH](https://datatracker.ietf.org/doc/html/rfc4253#ref-SSH-ARCH) and in [SSH-NUMBERS](https://datatracker.ietf.org/doc/html/rfc4253#ref-SSH-NUMBERS)
+            * Additional methods may be defined as specified in [SSH-ARCH](https://datatracker.ietf.org/doc/html/rfc4251) and in [SSH-NUMBERS](https://datatracker.ietf.org/doc/html/rfc4250)
 
     5. Key Exchange Methods
         * Specifies how one-time session keys are generated for encryption and 
@@ -309,7 +309,7 @@ RFC 4253 details the SSH transport layer protocol, which (usually) runs on top o
             |-----------------------------|-----------|---------------|
             | diffie-hellman-group1-sha1  | REQUIRED  | See Section 8 |
             | diffie-hellman-group14-sha1 | REQUIRED  | See Section 8 |
-            * Additional methods may be defined as specified in [SSH-NUMBERS](https://datatracker.ietf.org/doc/html/rfc4253#ref-SSH-NUMBERS)
+            * Additional methods may be defined as specified in [SSH-NUMBERS](https://datatracker.ietf.org/doc/html/rfc4250)
             * The name "diffie-hellman-group1-sha1" is used for a key exchange method
             using an Oakley group as defined in [RFC 2409](https://datatracker.ietf.org/doc/html/rfc2409)
             * SSH maintains its own group identifier space that is logically
@@ -340,7 +340,7 @@ RFC 4253 details the SSH transport layer protocol, which (usually) runs on top o
             | ssh-rsa      | RECOMMENDED | sign           | Raw RSA Key                    |
             | pgp-sign-rsa | OPTIONAL    | sign           | OpenPGP certificates (RSA key) |
             | pgp-sign-dss | OPTIONAL    | sign           | OpenPGP certificates (DSS key) |
-            * Additional key types may be defined as specified in [SSH-ARCH](https://datatracker.ietf.org/doc/html/rfc4253#ref-SSH-ARCH) and [SSH-NUMBERS](https://datatracker.ietf.org/doc/html/rfc4253#ref-SSH-NUMBERS)
+            * Additional key types may be defined as specified in [SSH-ARCH](https://datatracker.ietf.org/doc/html/rfc4251) and [SSH-NUMBERS](https://datatracker.ietf.org/doc/html/rfc4250)
             * Key type MUST always be explicitly known (from algorithm negotiation or another source). It is not normally included in the key blob.
         * Certificates and public keys are encoded as follows:
             | Type    | Value                                 |
@@ -460,7 +460,7 @@ RFC 4253 details the SSH transport layer protocol, which (usually) runs on top o
             | boolean   | first_kex_packet_follows                |
             | uint32    | 0   (reserved for future extension)     |
         * Each of the algorithm name--lists MUST be a comma-separated list of algorithm
-        names (see Algorithm Naming in [SSH-ARCH](https://datatracker.ietf.org/doc/html/rfc4253#ref-SSH-ARCH) and additional information in [SSH-NUMBERS](https://datatracker.ietf.org/doc/html/rfc4253#ref-SSH-NUMBERS)). Each supported
+        names (see Algorithm Naming in [SSH-ARCH](https://datatracker.ietf.org/doc/html/rfc4251) and additional information in [SSH-NUMBERS](https://datatracker.ietf.org/doc/html/rfc4250)). Each supported
         (allowed) algorithm MUST be listed in order of preference, from most to least.
         * The first algorithm in each name-list MUST be the preferred (guessed) algorithm
         * Each name-list MUST contain at least one algorithm name
@@ -539,7 +539,7 @@ RFC 4253 details the SSH transport layer protocol, which (usually) runs on top o
                     for language identification tags
                 * Both parties MAY ignore this name-list
                 * SHOULD be empty if there are no language preferences, as defined
-                in Section 5 of [SSH-ARCH](https://datatracker.ietf.org/doc/html/rfc4253#ref-SSH-ARCH)
+                in Section 5 of [SSH-ARCH](https://datatracker.ietf.org/doc/html/rfc4251)
                 * SHOULD NOT be present unless they are known to be needed by the
                 sending party
             
@@ -806,8 +806,8 @@ RFC 4253 details the SSH transport layer protocol, which (usually) runs on top o
 10. Service Request
     * After the key exchange, the Client requests a service
     * The service is identified by a name
-    * The format of names and procedures for defining new names are defined in [SSH-ARCH](https://datatracker.ietf.org/doc/html/rfc4253#ref-SSH-ARCH)
-    and [SSH-NUMBERS](https://datatracker.ietf.org/doc/html/rfc4253#ref-SSH-NUMBERS)
+    * The format of names and procedures for defining new names are defined in [SSH-ARCH](https://datatracker.ietf.org/doc/html/rfc4251)
+    and [SSH-NUMBERS](https://datatracker.ietf.org/doc/html/rfc4250)
     * The following names are currently reserved:
         * ssh-userauth
         * ssh-connection
@@ -826,14 +826,14 @@ RFC 4253 details the SSH transport layer protocol, which (usually) runs on top o
 
     * If the Server supports the service, and permits the Client to use it, it MUST
     respond with:
-        | Type   | Value                   |
-        |--------|-------------------------|
+        | Type   | Value                  |
+        |--------|------------------------|
         | byte   | SSH_MSG_SERVICE_ACCEPT |
-        | string | service name            |
+        | string | service name           |
     
     * Message numbers used by services should be in the area reserved for them
-        * See [SSH-ARCH](https://datatracker.ietf.org/doc/html/rfc4253#ref-SSH-ARCH)
-        and [SSH-NUMBERS](https://datatracker.ietf.org/doc/html/rfc4253#ref-SSH-NUMBERS)
+        * See [SSH-ARCH](https://datatracker.ietf.org/doc/html/rfc4251)
+        and [SSH-NUMBERS](https://datatracker.ietf.org/doc/html/rfc4250)
     
         The transport level will continue to process its own messages
     
@@ -843,28 +843,127 @@ RFC 4253 details the SSH transport layer protocol, which (usually) runs on top o
 11. Additional Messages
     
     Either party may send any of the following messages at any time:
-    1. Disconnection Message
-    2. Ignored Data Message
-    3. Debug Message
-    4. Reserved Messages
 
+    1. Disconnection Message
+        * Causes immediate termination of the connection
+        * All implementations MUST be able to process this message, and SHOULD be able
+        to transmit this message
+        * The sender MUST NOT send or receive any data after this message
+        * The recipient MUST NOT accept any data after receiving this message
+        * Message format:
+            | Type   | Value                                                                                               |
+            |--------|-----------------------------------------------------------------------------------------------------|
+            | byte   | SSH_MSG_DISCONNECT                                                                                  |
+            | uint32 | reason code                                                                                         |
+            | string | description in ISO-10646 UTF-8 encoding ([RFC 3629](https://datatracker.ietf.org/doc/html/rfc3629)) |
+            | string | language tag ([RFC 3066](https://datatracker.ietf.org/doc/html/rfc3066))                            |
+            * 'description' string gives the reason for disconnect in a human-readable form
+                * If the 'description' string is displayed, the control character filtering discussed in
+                [SSH-ARCH](https://datatracker.ietf.org/doc/html/rfc4251) should be used to
+                avoid attacks by sending terminal control characters
+
+            * 'reason code' gives the reason in a machine-readble form
+                * 'reason code' can have one of the values defined in the table below:
+                    | Symbolic Name                                 | 'reason code' Value |
+                    |-----------------------------------------------|---------------------|
+                    | SSH_DISCONNECT_HOST_NOT_ALLOWED_TO_CONNECT    | 1                   |
+                    | SSH_DISCONNECT_PROTOCOL_ERROR                 | 2                   |
+                    | SSH_DISCONNECT_KEY_EXCHANGE_FAILED            | 3                   |
+                    | SSH_DISCONNECT_RESERVED                       | 4                   |
+                    | SSH_DISCONNECT_MAC_ERROR                      | 5                   |
+                    | SSH_DISCONNECT_COMPRESSION_ERROR              | 6                   |
+                    | SSH_DISCONNECT_SERVICE_NOT_AVAILABLE          | 7                   |
+                    | SSH_DISCONNECT_PROTOCOL_VERSION_NOT_SUPPORTED | 8                   |
+                    | SSH_DISCONNECT_HOST_KEY_NOT_VERIFIABLE        | 9                   |
+                    | SSH_DISCONNECT_CONNECTION_LOST                | 10                  |
+                    | SSH_DISCONNECT_BY_APPLICATION                 | 11                  |
+                    | SSH_DISCONNECT_TOO_MANY_CONNECTIONS           | 12                  |
+                    | SSH_DISCONNECT_AUTH_CANCELLED_BY_USER         | 13                  |
+                    | SSH_DISCONNECT_NO_MORE_AUTH_METHODS_AVAILABLE | 14                  |
+                    | SSH_DISCONNECT_ILLEGAL_USER_NAME              | 15                  |
+                * Requests for assignments of new 'reason code' values (and associated 'description' text) in the range
+                of 0x00000010 to 0xFDFFFFFF MUST be done through the IETF CONSENSUS method, as described in
+                [RFC 2434](https://datatracker.ietf.org/doc/html/rfc2434).
+                * Disconnection Message 'reason code' values in the range of 0xFE000000 through 0xFFFFFFFF are reserved
+                for PRIVATE USE
+                
+    2. Ignored Data Message
+        * Message format:
+            | Type   | Value          |
+            |--------|----------------|
+            | byte   | SSH_MSG_IGNORE |
+            | string | data           |
+        * All implementations MUST understand (and ignore) this message at any time (after receiving the
+        identification string).
+        * No implementation is required to send them.
+        * This message can be used as an additional protection measure against advanced traffic analysis techniques
+        
+
+    3. Debug Message
+        * All implementations MUST understand this message, but are allowed to ignore it.
+        * This message is used to transmit information that may help debugging
+        * Message format:
+            | Type    | Value                                                                                           |
+            |---------|-------------------------------------------------------------------------------------------------|
+            | byte    | SSH_MSG_DEBUG                                                                                   |
+            | boolean | always_display                                                                                  |
+            | string  | message in ISO-10646 UTF-8 encoding ([RFC 3629](https://datatracker.ietf.org/doc/html/rfc3629)) |
+            | string  | language tag ([RFC 3066](https://datatracker.ietf.org/doc/html/rfc3066))                        |
+            * 'always_display':
+                * If TRUE, the message SHOULD be displayed
+                * If FALSE, it SHOULD NOT be displayed, unless debugging information has been explcitly requested by the
+                user
+            * 'message'
+                * Does not need to contain a newline
+                * Is permitted to consist of multiple lines separated by \<CR>\<LF> pairs
+                * If displayed, the terminal control characte filtering discussed in
+                [SSH-ARCH](https://datatracker.ietf.org/doc/html/rfc4251) should be used to avoid
+                attacks by sending terminal control characters
+
+    4. Reserved Messages
+        * An implementation MUST respond to all unrecognized messages with an SSH_MSG_UNIMPLEMENTED message in the order
+        in which the messages were received
+        * Such messages MUST be otherwise ignored
+        * Message format:
+            | Type   | Value                                      |
+            |--------|--------------------------------------------|
+            | byte   | SSH_MSG_UNIMPLEMENTED                      |
+            | uint32 | packet sequence number of rejected message |
+        
 12. Summary of Message Numbers
+    * The following is a summary of messages, along with their associated message number:
+        | Symbolic Name           | Value |
+        |-------------------------|-------|
+        | SSH_MSG_DISCONNECT      | 1     |
+        | SSH_MSG_IGNORE          | 2     |
+        | SSH_MSG_UNIMPLEMENTED   | 3     |
+        | SSH_MSG_DEBUG           | 4     |
+        | SSH_MSG_SERVICE_REQUEST | 5     |
+        | SSH_MSG_SERVICE_ACCEPT  | 6     |
+        | SSH_MSG_KEXINIT         | 20    |
+        | SSH_MSG_NEWKEYS         | 21    |
+    * Numbers 30 through 49 are used for kex packets - different kex methods may reuse message numbers in this range
+
 
 13. IANA Considerations
     * The summarized document is part of a set, including:
-        * [SSH-ARCH](https://datatracker.ietf.org/doc/html/rfc4253#ref-SSH-ARCH)
-        * [SSH-USERAUTH](https://datatracker.ietf.org/doc/html/rfc4253#ref-SSH-USERAUTH)
-        * [SSH-CONNECT](https://datatracker.ietf.org/doc/html/rfc4253#ref-SSH-CONNECT)
-        * [SSH-NUMBERS](https://datatracker.ietf.org/doc/html/rfc4253#ref-SSH-NUMBERS)
-        * the summarized document
+        * [SSH-ARCH](https://datatracker.ietf.org/doc/html/rfc4251)
+        * [SSH-USERAUTH](https://datatracker.ietf.org/doc/html/rfc4252)
+        * [SSH-CONNECT](https://datatracker.ietf.org/doc/html/rfc4254)
+        * [SSH-NUMBERS](https://datatracker.ietf.org/doc/html/rfc4250)
+        * [SSH-TRANS](https://datatracker.ietf.org/doc/html/rfc4253) (the document summarized here)
     * IANA considerations for the SSH protocol as defined in the above set are detailed
-    in [SSH-NUMBERS](https://datatracker.ietf.org/doc/html/rfc4253#ref-SSH-NUMBERS)
+    in [SSH-NUMBERS](https://datatracker.ietf.org/doc/html/rfc4250)
 
-14. Security considerations for this protocol are provided in [SSH-ARCH](https://datatracker.ietf.org/doc/html/rfc4253#ref-SSH-ARCH)
+14. Security considerations for this protocol are provided in [SSH-ARCH](https://datatracker.ietf.org/doc/html/rfc4251)
 
 15. References
     * See the summarized document [RFC 4253](https://datatracker.ietf.org/doc/html/rfc4253) for references
 
 
-## Resources
-[RFC 4253](https://datatracker.ietf.org/doc/html/rfc4253)
+## SSH RFC Collection
+* [SSH-ARCH](https://datatracker.ietf.org/doc/html/rfc4251)
+* [SSH-USERAUTH](https://datatracker.ietf.org/doc/html/rfc4252)
+* [SSH-CONNECT](https://datatracker.ietf.org/doc/html/rfc4254)
+* [SSH-NUMBERS](https://datatracker.ietf.org/doc/html/rfc4250)
+* [SSH-TRANS](https://datatracker.ietf.org/doc/html/rfc4253)

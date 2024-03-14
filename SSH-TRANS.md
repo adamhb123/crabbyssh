@@ -1,7 +1,7 @@
 ## [SSH-TRANS](https://datatracker.ietf.org/doc/html/rfc4253) - The Secure Shell (SSH) Transport Layer Protocol ([RFC 4253](https://datatracker.ietf.org/doc/html/rfc4253)) Summary (by section)
 This is a summary of "The Secure Shell (SSH) Transport Layer Protocol" ([RFC 4253](https://datatracker.ietf.org/doc/html/rfc4253))
 
-RFC 4253 details the SSH transport layer protocol, which (usually) runs on top of TCP/IP
+SSH-TRANS (RFC 4253) details the SSH transport layer protocol, which (usually) runs on top of TCP/IP
 
 1. Introduction
     * Host-based authentication, user authentication not performed

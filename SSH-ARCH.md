@@ -259,8 +259,138 @@ notation and terminology used in SSH protocol documents
 
             <b>TODO: Further explanation of the above examples</b>
 
-
+    * name-list
+    	* String containing a comma-separated list of names
+    	* Represented as a uint32 containing its length (number of bytes that follow)
+    	* A name MUST have non-zero length
+    	* All elements contained MUST be in US-ASCII
+    	* Order of elements (names) ma or may not be significant
+    	* Terminating null characters MUST NOT be used
+    	* 
+   		* Examples:
+            | Value (hex)     | Representation (hex)                |
+            |-----------------|-------------------------------------|
+            | (), the empty name-list       | 00 00 00 00   |
+            | ("zlib")        | 00 00 00 04 7a 6c 69 62  |
+            | ("zlib,none")        |00 00 00 09 7a 6c 69 62 2c 6e 6f 6e 65|
+            
+6. Algorithm and Method Naming
+	* Hash, encryption, integrity, and key exchange algorithms or methods are referred to by name
+	* Some standard algorithms and methods MUST be supported by all implementations
+	* All algorithm and method identifiers MUST be printable US-ASCII, non-empty strings no longer than 64 characters
+	* Names MUST be case-sensitive
+	
+    Two formats exist for algorithm and method names:
+    	1. Names that do not contain an "@" sign are reserved to be assigned by IETF CONSENSUS
+    		* E.g., "3des-cbc"; "sha-1"; "hmac-sha1"; "zlib"
+    		* Names of this format are only valid if they are first registered with the IANA
+    		* Registered names MUST NOT contain an "@" sign, comma (","), whitespace, control characters (ASCII <= 32), or \<DEL> (ASCII 127)
+    		* Names are case-sensitive, and MUST NOT be longer than 64 characters
+    	2. Additional algorithms or methods may be defined in the format name@domainname
+    		* E.g., "ourcipher-cbc@example.com"
+    		* These names MUST be printable US-ASCII strings, and MUST NOT contain a comma (","), whitespace, control characters (ASCII <= 32), or \<DEL> (ASCII 127)
+			* These names MUST only have a single "@" sign
+			* The part following "@" MUST be a valid, fully-qualified domain name, controlled by the person or organization defining the name
+			* Names are case-sensitive, and MUST NOT be longer than 64 characters
+	
+7. Message Numbers
+	* SSH packets have message numbers in the range 1-255. These numbers have been allocated as follows:
+		* Transport Layer Protocol:
+			| Range | Description |
+            | ----- | ----------- |
+            | 1-19  | Transport layer generic (e.g., disconnect; ignore; debug; etc... |
+            | 20-29 | Algorithm negotiation |
+            | 30-49 | Key exchange method specific (numbers can be reused for different authentication methods) |
+            
+		* User Authentication Protocol:
+			| Range | Description |
+            | ----- | ----------- |
+            | 50-59 | User authentication generic |
+            | 60-79 | User authentication method specific (numbers can be reused for different authentication methods) |
+            
+		* Connection Protocol:   
+            | Range | Description |
+            | ----- | ----------- |
+            | 80-89 | User authentication generic |
+            | 90-127 | Channel related messages |
         
+		* Reserved for client protocols:
+			| Range | Description |
+            | ----- | ----------- |
+            | 128-191 | Reserved |
+		* Local extensions:
+		 	| Range | Description |
+            | ----- | ----------- |
+            | 192-255 | Local extensions |
+
+8. IANA Considerations
+	* See document
+
+9. Security Considerations
+
+	0. Untitled
+
+      Transport Layer Protocol:
+
+      * Provides a confidential channel over an insecure network
+      * Performs:
+        * Server host authentication
+        * Key exchange
+        * Encryption
+        * Integrity protection
+      * Derives a unique session-id, which may be used by higher-level protocols
+
+      User Authentication Protocol:
+
+      * Provides a suite of mechanisms used to authenticate the client user to the server
+      * Mechanisms specified in the Authentication Protocol use the session-id provided by the Transport Layer Protocol and/or depend on the security and integrity guarantees of the Transport Layer Protocol
+
+      Connection Protocol:
+
+      * Specifies:
+          * A mechanism to multiplex multiple streams (channels) of data over the confidential and authenticated transport
+          * Channels for accessing an interactive shell
+          * Channels for proxy-forwarding various external protocols over the secure transport (including arbitrary TCP/IP protocols)
+          * Channels for accessing secure subsystems on the server host
+    
+	1. Pseudo-Random Number Generation
+		* This protocol binds each session key to the session by including random, session-specific data in the hash used to produce session keys
+		* Special care should be taken to ensure all random numbers are of good quality
+		* If the random data here (e.g., Diffie-Hellman parameters) are pseudo-random, then the pseudo-random number generator should be cryptographically secure (i.e., its next output not easily guessed even when knowing all previous outputs)
+			* Proper entropy must be added to the pseudo-random number generator as well
+		* [RFC 4086](https://datatracker.ietf.org/doc/html/rfc4086) offers suggestions for sources of random numbers and entropy
+		* In the case that the amount of entropy available to a given Client or Server is less than required, one must either resort to pseudo-random number generation regardless of insufficient entropy or refuse to run the protocol. The latter is preferable.
+	
+	2. Control Character Filtering
+		* When displaying text to a user, such as error or debug messages, the Client software SHOULD replace any control characters (excluding tab, \<CR>, and newline) with safe sequences to avoid attacks by sending terminal control characters
+	
+	3. Transport
+		1. Confidentiality
+			* The Rogaway CBC mode attack may be mitigated through the insertion of packets containing SSH_MSG_IGNORE
+			* See document for details
+		2. Data Integrity
+			* This protocol allows the Data Integrity mechanism to be disabled, but implementers SHOULD be wary of exposing this feature for any purpose other than debugging
+				* Users and administrators SHOULD be explicitly warned anytime that the "none" MAC is enabled
+			* So long as the "none" MAC is not used, this protocol provides data integrity
+			* Since MACs use a 32-bit sequence number, they might start to leak information after 2<sup>32</sup> packets have been set
+				* Following the rekeying recommendations should prevent this attack
+					* The Transport Layer Protocol (SSH-TRANS) recommends rekeying after 1 GB of data, and the smalleseet possible packet is 16 bytes. Therefore, rekeying SHOULD happen after 2<sup>28</sup> at the very most
+
+		3. Replay
+			* The use of a MAC other than "none" provides integrity and authentication
+			* Additionally, the Transport Layer Protocol provides a unique session identifier that can be used by higher-level protocols to bind data to a given session and prevent replay of data from prior sessions
+				* For example, the User Authentication Protocol (SSH-USERAUTH) uses this to prevent replay of signatures from previous sessions
+				* Since public key authentication exchanges are cryptographically bound to the session (i.e., to the initial key exchange), they cannot be successfully replayed in other sessions
+				* Note that the session-id can be made ppublic without harming the security of the protocol
+			* Two sessions with the same session-id (hash of key exchanges) can have their packets used to replay against the other. The chance of this is minimal with modern cryptographic methods
+			* See document for discussion of replay detection using monotonically increasing sequence numbers as input to the MAC or HMAC
+		
+        4. Man-in-the-middle (MITM)
+        	* This protocol makes no assumptions or provisions for an infrastructure or means for distributing the public keys of hosts
+        	* If the protocol is used without first verifying the Server host key - Server host name association (such as when connecting to a Server for the first time), then MITM attacks are possible
+        	* "In summary, the use of this protocol without a reliable association of the binding between a host and its host keys is inherently insecure and is NOT RECOMMENDED.  However, it may be necessary in non-security-critical environments, and will still provide protection against passive attacks."
+        	* See document for further details on MITM attacks
+					
 
 
-        
+

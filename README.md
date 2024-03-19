@@ -10,8 +10,9 @@ TODO
 #### Complete
 * [SSH-ARCH.md](SSH-ARCH.md)
 * [SSH-TRANS.md](SSH-TRANS.md)
-#### In Progress
 * [SSH-USERAUTH](SSH-USERAUTH.md)
+#### In Progress
+
 #### TODO
 
 * [SSH-CONNECT]()

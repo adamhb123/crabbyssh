@@ -7,12 +7,13 @@ TODO
 
 ## SSH RFC Collection
 ### Summaries:
-#### Complete
+#### Complete (rough-drafts)
+* [SSH-ARCH.md](SSH-ARCH.md)
 * [SSH-TRANS.md](SSH-TRANS.md)
 #### In Progress
-* [SSH-ARCH.md](SSH-ARCH.md)
+* [SSH-USERAUTH](SSH-USERAUTH.md)
 #### TODO
-* [SSH-USERAUTH]()
+
 * [SSH-CONNECT]()
 * [SSH-NUMBERS]()
 

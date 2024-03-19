@@ -1,7 +1,8 @@
 ## [SSH-TRANS](https://datatracker.ietf.org/doc/html/rfc4253) - The Secure Shell (SSH) Transport Layer Protocol ([RFC 4253](https://datatracker.ietf.org/doc/html/rfc4253)) Summary (by section)
 This is a summary of "The Secure Shell (SSH) Transport Layer Protocol" ([RFC 4253](https://datatracker.ietf.org/doc/html/rfc4253))
 
-SSH-TRANS (RFC 4253) details the SSH transport layer protocol, which (usually) runs on top of TCP/IP
+0. Abstract
+    * SSH-TRANS (RFC 4253) details the SSH transport layer protocol, which (usually) runs on top of TCP/IP
 
 1. Introduction
     * Host-based authentication, user authentication not performed
@@ -20,12 +21,14 @@ SSH-TRANS (RFC 4253) details the SSH transport layer protocol, which (usually) r
     * See document
 4. Connection Setup
     
-    0. Untitled
+    0. Connection Setup
         * SSH works over any 8-bit clean, binary-transparent transport
         * Underlying transport SHOULD protect against transmission errors
         * Errors cause SSH connection to terminate
+
     1. Use Over TCP/IP
         * Server listens for connections on port 22 (official IANA assignment)
+
     2. Protocol Version Exchange
         * After connection established, both sides send an identification string (which we will call "ID string" for brevity)
         * Older, undocumented versions of SSH may exclude the \<CR>
@@ -75,7 +78,7 @@ SSH-TRANS (RFC 4253) details the SSH transport layer protocol, which (usually) r
     
 5. Compatibility with Old SSH Versions
     
-    0. Untitled
+    0. Compatibility with Old SSH Versions
         * See document
 
     1. Old Client, New Server
@@ -102,7 +105,7 @@ SSH-TRANS (RFC 4253) details the SSH transport layer protocol, which (usually) r
 
 6. Binary Packet Protocol
 
-    0. Untitled
+    0. Binary Packet Protocol
         * Each packet is in the following format:
         ```
         uint32    packet_length
@@ -159,8 +162,8 @@ SSH-TRANS (RFC 4253) details the SSH transport layer protocol, which (usually) r
         * Defined compression methods:
             | Name | Necessity | Description                                                                                                                                          |
             |------|-----------|------------------------------------------------------------------------------------------------------------------------------------------------------|
-            | none | REQUIRED  | no compression                                                                                                                                       |
             | zlib | OPTIONAL  | ZLIB (LZ77) compression; See [RFC 1950](https://datatracker.ietf.org/doc/html/rfc1950) and [RFC 1951](https://datatracker.ietf.org/doc/html/rfc1951) |
+            | none | REQUIRED  | no compression                                                                                                                                       |
     
     3. Encryption
         * Encryption algorithm and a key are negotiated during key exchange
@@ -406,7 +409,7 @@ SSH-TRANS (RFC 4253) details the SSH transport layer protocol, which (usually) r
             * The 'pgp-sign-dss' is as above, but indicates that the key is a DSS-key.
 7. Key Exchange
 
-    0. Untitled
+    0. Key Exchange
         * Key exchange begins by each side sending name-lists of supported algorithms.
         Each side has a preferred algorithm in each category. It is expected that most
         implementations will use the same preferred algorithm at any given time.
@@ -656,7 +659,7 @@ SSH-TRANS (RFC 4253) details the SSH transport layer protocol, which (usually) r
 
 8. Diffie-Hellman Key Exchange
 
-    0. Untitled
+    0. Diffie-Hellman Key Exchange
         * The Diffie-Hellman (DH) key exchange provides a shared secret that cannot be
         determined by either party alone
         * The key exchange is combined with a signature with the host key to provide host

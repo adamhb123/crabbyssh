@@ -1,8 +1,9 @@
-## [SSH-ARCH](https://datatracker.ietf.org/doc/html/rfc4251) - The Secure Shell (SSH) Protocol Architecture ([RFC 4251](https://datatracker.ietf.org/doc/html/rfc4253)) Summary (by section)
-This is a summary of "The Secure Shell (SSH) Transport Layer Protocol" ([RFC 4251](https://datatracker.ietf.org/doc/html/rfc4251))
+## [SSH-ARCH](https://datatracker.ietf.org/doc/html/rfc4251) - The Secure Shell (SSH) Protocol Architecture ([RFC 4251](https://datatracker.ietf.org/doc/html/rfc4251)) Summary (by section)
+This is a summary of "The Secure Shell (SSH) Protocol Architecture" ([RFC 4253](https://datatracker.ietf.org/doc/html/rfc4251))
 
-SSH-ARCH (RFC 4253) details the architecture of the SSH protocol, as well as the 
-notation and terminology used in SSH protocol documents
+0. Abstract
+    * SSH-ARCH (RFC 4251) details the architecture of the SSH protocol, as well as the 
+    notation and terminology used in SSH protocol documents
 
 1. Introduction
 
@@ -328,7 +329,7 @@ notation and terminology used in SSH protocol documents
 
 9. Security Considerations
 
-	0. Untitled
+	0. Security Considerations
 
       Transport Layer Protocol:
 
@@ -391,6 +392,185 @@ notation and terminology used in SSH protocol documents
         	* "In summary, the use of this protocol without a reliable association of the binding between a host and its host keys is inherently insecure and is NOT RECOMMENDED.  However, it may be necessary in non-security-critical environments, and will still provide protection against passive attacks."
         	* See document for further details on MITM attacks
 					
+        5. Denial of Service (DOS)
+            * This protocol is designed to be used of a reliable transport
+                * If transmission errors or message manipulation occur, the connection is closed
+                    * Connection SHOULD be re-established if this occurs
+                    * DOS attacks of this type (wire cutter) are almost impossible to avoid
+            * Additionally, this protocol is vulnerable to DOS attacks
+                * An attacker can force the server to go through the CPU and memory intensive tasks of
+                connection setup and key exchange without authenticating
+                * Implementers SHOULD provide features that make this more difficult
+                    * E.g., by only allowing connections from a subset of clients known to have valid users.
+        
+        6. Covert Channels
+            * This protocol was not designed to eliminate covert channels.
+                * E.g., the padding, SSH_MSG_IGNORE messages, and several other places in the protocol
+                can be used to pass covert information, and the recipient has no reliable way of verifying whether
+                such information is sent.
+        
+        7. Forward Secrecy
+            * Diffie-Hellman key exchanges may provide perfect forward secrecy (PFS)
+            * PFS is essentially defined as the cryptographic property of a key-establishment protocol in which
+            the compromise of a session key or long-term private key after a given session does not cause the
+            compromise of any earlier session
+            * SSH sessions using Diffie-Hellman key exchange are secure even if private keying/authentication
+            material is later revealed, but NOT if the session keys are revealed
+                * Thus, SSH has PFS based on this definition. HOWEVER, this property is not commuted to any 
+                of the applications or protocols using SSH as a transport
+            * The transport layer of SSH provides confidentiality for password authentication and other methods
+            relying on sercret data
+            * If the Diffie-Hellman parameters for the Client and Server are revealed, then the session key is
+            also revealed
+                * These items can be thrown away after the key exchange completes
+                * These items should not be allowed to end up on swap space, and should be erased from memory
+                as soon as the key exchange completes
+        
+        8. Ordering of Key Exchange Methods
+            * As stated in the section on Algorithm Negotiation of SSH-TRANS, each device will send a list of
+            preferred methods for key exchange
+                * The list is ordered by preference, with the first method being the most-preferred
+                    * It is RECOMMENDED that the algorithms be sorted (i.e., preferred) by cryptographic
+                    strength, with the strongest first
+                    * Additional guidance is provided in [RFC 3766](https://datatracker.ietf.org/doc/html/rfc3766)
+    
+        9. Traffic Analysis
+            * Passive monitoring of any protocol may give an attacker some information about the session, the user, or
+            protocol-specific information that would otherwise be irretrievable
+                * E.g., it has been shown that traffic analysis of an SSH session can yield information about the
+                length of the password
+            * To thwart traffic analysis attempts, implementers should use the SSH_MSG_IGNORE packet, along with
+            the inclusion of random lengths of padding
+
+    4. Authentication Protocol
+
+        0. Authentication Protocol
+
+            * SSH-USERAUTH defines the Authentication Protocol
+            * The purpose of this protocol is to perform Client user authentication
+            * This protocol is assumed to be run over the Transport Layer Protocol, which has already authenticated
+            the Server machine, established an encrypted communications channel, and computed a unique session
+            identifier for this session
+            * Local policy determines the method (or methods) of authentication that can be used to authenticate each
+            user. Authentication is no stronger than its weakest link (i.e., the weakest combination of methods allowed)
+            * The Server may go into a sleep period after repeated unsuccessful authentication attempts to make key
+            search more difficult for attackers
+                * Care should be taken to ensure this doesn't become a self-denial of service vector
+    
+        1. Weak Tranport
+            * If the Transport Layer does not provide confidentiality, authentication methods relying on secret
+            data SHOULD be disabled
+                * If it does not provide strong integrity protection, requests to change authentication data
+                (e.g., a password change) SHOULD be disabled to prevent an attacker from modifying the ciphertext
+                without being noticed, or rendering the new authentication data unusable (denial of service)
+            
+            * The assumption that the Authentication Protocol only runs over a secure transport that previously
+            authenticated the Server is important to note
+                * See document for further discussion
+            
+        2. Debug Messages
+            * Special care should be taken when designing debug messages, as they may reveal significant information
+            about the host if not properly designed
+            * Debug messages can be disabled during the User Authentication phase if high security is required
+            * Event notification messages should be compartmentalized and protected from unwarranted observation
+            * Consider minimizing the amount of sensitive information obtainable by users during the authentication
+            phase, in accordance with local policy
+            * It is thus RECOMMENDED that debug messages be initially disabled at the time of deployment, and require
+            an active decision by an administrator to allow them to be enabled
+            * It is also RECOMMENDED that a message expressing this concern be presented to the administrator of a
+            system when the action is taken to enable debugging messages
+        
+        3. Local Security Policy
+            * Implementers MUST ensure that the credentials provided validate the professed user, and also MUST
+            ensure that the local policy of the server permits the user the access requested
+            * Due to the flexibility of the SSH Connection Protocol, it may be impossible to determine the
+            local security policy, if any, that should apply at the time of authentication because the kind of
+            service being requested is not clear at that instant
+                * E.g., local policy may allow a user to access files on the server, but not to start an interactive
+                shell. However, during the Authentication Protocol, it is unknown whether the user will be accessing
+                files, attempting to use an interactive shell, or even both.
+                * Regardless, where local security for the Server host exists, it MUST be applied and enforced correctly
+            
+            * It is encouraged to provide a default local policy with parameters known to administrators and users
+                * Default policy may be along the lines of "anything-goes" (no / minimal restrictions) or it may
+                be excessively-restrictive
+                    * If a default policy is excessively-restrictive, administrators will have to actively make
+                    changes to the initial default parameters to meet their needs
+                * Regardless of what default policy is chosen, it must be applied and enforced as required above
+            
+        4. Public Key Authentication (PKA)
+            * The use of PKA assumes:
+                * The Client host has not been compromised
+                * The Server host's private key has not been compromised
+            * Risk can be mitigated by the use of passphrases on private keys
+                * However, this is not an enforceable policy
+                    * Thus, the use of smartcards or other technology to make passphrases an enforceable policy
+                    is suggested
+            * The server may require both password and public key authentication
+                * However, this requires the Client expose its password to the server (see Password Authentication below)
+        
+        5. Password Authentication
+            * The password mechanism as specified in the Authentication Protocol assumes the Server has not been
+            compromised
+            * If the Server has been compromised, using password authentication will reveal a valid username/password
+            combination to the attacker, which may lead to further compromises.
+            * This vulnerability can be mitigated by using an alternative form of authentication.
+                * E.g., public key authentication makes no assumptions about Server security
+
+        6. Host-Based Authentication
+            * Assumes that the Client has not been compromised
+            * No mitigating strategies exist, other than to use host-based authenticatino in combination with another
+            authentication method
+        
+    5. Connection Protocol
+        1. End Point Security
+            * End point security is assumed by the Connection Protocol
+            * If the Server has been compromised, any terminal sessions, port forwarding, or systems accessed
+            on the host are compromised
+                * There are no mitigating factors for this
+            * If the Client has been compromised, and the Server fails to stop the attacker at the Authentication
+            Protocol, all services exposed (either as subsystems or through forwarding) will be vulnerable to attack
+            * Implementers SHOULD provide mechanisms for administrators to control which services are exposed to limit
+            the vulnerability of other services
+                * E.g., by controlling:
+                    * Which machines and ports can be targeted in port-forwarding operations
+                    * Which users are allowed to use interactive shell facilities
+                    * Which users are allowed to use exposed subsystems
+        
+        2. Proxy Forwarding
+            * The SSH Connection Protocol allows for proxy forwarding of other protocols such as SMTP, POP3, and
+            HTTP
+                * The forwarding of these protocols may violate site-specific security policies, as they may be
+                undetectably tunneled through a firewall
+                * Implementers SHOULD provide an administrative mechanism to control proxy forwarding functionality so
+                that site-specific security policies may be upheld
+            * Additionally, reverse proxy forwarding functionality is available
+                * This may also be used to bypass firewall controls
+
+            * Failure of end-point security (assumed during proxy forwarding operations) will compromise all data
+            passed over proxy forwarding
+
+        3. X11 Forwarding
+            * X11 proxy forwarding is also provided by the SSH Connection Protocol
+            * If end-point security has been compromised, X11 forwarding may allow attacks against the X11 server
+                * Appropriate X11 security mechanisms should be used to prevent unauthorized use of the X11 server
+            * Security mechanisms of X11 may be explored in [SCHEIFLER](https://datatracker.ietf.org/doc/html/rfc4251#ref-SCHEIFLER)
+            * X11 display forwarding with SSH is not sufficient to correct well known problems with X11 security
+                * However, X11 display forwaring in SSH (or other secure protocols) combined with actual and
+                pseudo-displays that accept connections only over local IPC mechanisms authorized by permissions
+                or access control lists (ACLs) does correct many X11 xecurity problems, as long as the "none" MAC
+                is NOT used
+                    * It is RECOMMENDED that X11 display implementations default to allow the display to open only
+                    over local IPC
+                    * It is RECOMMENDED that SSH Server implementations supporting X11 forwarding default to allow 
+                    the display to open only over local IPC
+                        * On single-user systems, it may be reasonable to default to allow the local display to open
+                        over TCP/IP
+            * Implementers of the X11 forwading protocol SHOULD implement the magic cookie access-checking spoofing
+            mechanism as described in SSH-CONNECT as an additional mechanism to prevent unauthorized use of the proxy
+
+10. References
+    * See document 
 
 
 

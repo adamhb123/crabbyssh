@@ -235,3 +235,411 @@ This is a summary of "The Secure Shell (SSH) Connection Protocol" ([RFC 4254](ht
 
     3. Closing a Channel
                 
+        * When a party will no longer send more data to a channel, it SHOULD send SSH_MSG_CHANNEL_EOF:
+            | Type   | Value               |
+            |--------|---------------------|
+            | byte   | SSH_MSG_CHANNEL_EOF |
+            | uint32 | recipient channel   |
+        
+            * No explicit response is sent to this message
+                * However, the application may send EOF to whatever is at the other end of the channel
+                    * TODO: This requires clarification - is the \<EOF> control character sent, or is this message (SSH_MSG_CHANNEL_EOF) sent???
+                        I am assuming the former, but am unsure
+            
+            * Note that the channel remains open after this message
+                * More data may be sent in the OTHER direction
+            
+            * This message does not consume window space
+                * Thus, it can be sent EVEN IF NO window space is available
+            
+        * When either party wishes to terminate the channel, it sends SSH_MSG_CHANNEL_CLOSE:
+            | Type   | Value                 |
+            |--------|-----------------------|
+            | byte   | SSH_MSG_CHANNEL_CLOSE |
+            | uint32 | recipient channel     |
+        
+            * Upon receiving this message, a party MUST send back an SSH_MSG_CHANNEL_CLOSE, unless it has already sent this message for
+                the channel
+
+            * The channel is considered closed for a party when it has BOTH sent and received SSH_MSG_CHANNEL_CLOSE
+                * Once closed, the channel number may be reused
+            
+            * A party MAY send this message (SSH_MSG_CHANNEL_CLOSE) without having sent or received SSH_MSG_CHANNEL_EOF
+            
+            * This message does not consume window space
+                * Thus, it can be sent EVEN IF NO window space is available
+
+            * It is RECOMMENDED that all data sent before this message be delivered to the actual destination, if possible
+        
+    4. Channel-Specific Requests
+        * Many 'channel type' values have extensions specific to that particular 'channel type'
+            * E.g., requesting a pty (pseudo-terminal) for an interactive session
+
+        * All channel-specific requests use the following format: 
+            | Type    | Value                                    |
+            |---------|------------------------------------------|
+            | byte    | SSH_MSG_CHANNEL_REQUEST                  |
+            | uint32  | recipient channel                        |
+            | string  | request type in US-ASCII characters only |
+            | boolean | want reply                               |
+            | ...     | type-specific data follows               |
+
+            * If 'want reply' is:
+                * FALSE - no response will be sent to the request
+                * TRUE - the recipient responds with either:
+                    1. SSH_MSG_CHANNEL_SUCCESS
+                    2. SSH_MSG_CHANNEL_FAILURE
+                        * E.g., if the request is not recognized or is not supported for the channel, this is sent
+                    3. request-specific continuation messages
+            
+           * This message does not consume window space
+                * Thus, it can be sent EVEN IF NO window space is available
+            
+            * The values of 'request type' are local to each channel type
+
+            * The Client is allowed to send further messages without waiting for the response to the request
+
+            * 'request type' names follow the DNS extensibility naming convention outlined in [SSH-ARCH](./SSH-ARCH.md) and 
+                [SSH-NUMBERS](./SSH-NUMBERS.md)
+            
+            * Recipient responses to this message:
+                | Type   | Value                   |
+                |--------|-------------------------|
+                | byte   | SSH_MSG_CHANNEL_SUCCESS |
+                | uint32 | recipient channel       |
+
+                | Type   | Value                   |
+                |--------|-------------------------|
+                | byte   | SSH_MSG_CHANNEL_FAILURE |
+                | uint32 | recipient channel       |
+
+                * 'recipient channel' refers to the sender's (i.e., the one who sent the message's) channel number
+
+                * These messages do not consume window space
+                    * Thus, they can be sent EVEN IF NO window space is available
+
+6. Interactive Sessions
+    0. Interactive Sessions
+        * A session is a remote execution of a program
+            * The program may be a shell, application, system command, or some built-in subsystem
+            * The program may or may not have a tty, and may or may not involve X11 forwarding
+            * Multiple sessions can be active simultaneously
+    
+    1. Opening a Session
+        * A session is started by sending an SSH_MSG_CHANNEL_OPEN message:
+            | Type   | Value                |
+            |--------|----------------------|
+            | byte   | SSH_MSG_CHANNEL_OPEN |
+            | string | "session"            |
+            | uint32 | sender channel       |
+            | uint32 | initial window size  |
+            | uint32 | maximum packet size  |
+
+            * Client implementations SHOULD reject any session channel open requests to make it more difficult for a corrupt Server to
+                attack the Client
+        
+    2. Requesting a Pseudo-Terminal
+        * A pseudo-terminal can be allocated for the session by sending a SSH_MSG_CHANNEL_REQUEST message:
+            | Type   | Value                                         |
+            |--------|-----------------------------------------------|
+            | byte   | SSH_MSG_CHANNEL_REQUEST                       |
+            | uint32 | recipient channel                             |
+            | string | "pty-req"                                     |
+            | string | TERM environment variable value (e.g., vt100) |
+            | uint32 | terminal width, characters (e.g., 80)         |
+            | uint32 | terminal height, rows (e.g., 24)              |
+            | uint32 | terminal width, pixels (e.g., 640)            |
+            | uint32 | terminal height, pixels (e.g., 480)           |
+            | string | encoded terminal modes                        |
+        
+            * 'encoded terminal modes' are described in Section 8
+
+            * Dimension parameters are only informational, and:
+                * Zero dimension parameters MUST be ignored
+                * Character/row dimensions OVERRIDE the pixel dimensions (when nonzero)
+                * Pixel dimensions refer to the drawable area of the window
+
+            * The Client SHOULD ignore pty requests
+
+    3. X11 Forwarding
+        1. Requesting X11 Forwarding
+            * X11 forwarding may be requested for a session by sending a SSH_MSG_CHANNEL_REQUEST message:
+                | Type    | Value                       |
+                |---------|-----------------------------|
+                | byte    | SSH_MSG_CHANNEL_REQUEST     |
+                | uint32  | recipient channel           |
+                | string  | "x11-req"                   |
+                | boolean | want reply                  |
+                | boolean | single connection           |
+                | string  | x11 authentication protocol |
+                | string  | x11 authentication cookie   |
+                | uint32  | x11 screen number           |
+
+                * If 'single connection' is TRUE - only a single connection should be forwarded
+                    *  No more connections will be forwarded after the first, or after the session channel has been closed
+                
+                * 'x11 authentication protocol' - the name of the X11 authentication method used
+                    * E.g., "MIT-MAGIC-COOKIE-1"
+
+                * 'x11 authentication cookie' MUST be hexadecimal encoded
+                    * It is RECOMMENDED that the 'x11 authentication cookie' that is sent be a fake, random cookie, and that the cookie should
+                        be checked and replaced by the real cookie when a connection request is received
+                
+                * X11 connection forwarding should stop when the session channel is closed
+                    * However, already opened forwardings should NOT be automatically closed when the session channel is closed
+
+            * The X protocol is documented in [SHEIFLER](https://datatracker.ietf.org/doc/html/rfc4254#ref-SCHEIFLER)
+
+        2. X11 Channels
+            * X11 channels are opened with SSH_MSG_CHANNEL_OPEN:
+                | Type   | Value                                     |
+                |--------|-------------------------------------------|
+                | byte   | SSH_MSG_CHANNEL_OPEN                      |
+                | string | "x11"                                     |
+                | uint32 | sender channel                            |
+                | uint32 | initial window size                       |
+                | uint32 | maximum packet size                       |
+                | string | originator address (e.g., "192.168.7.38") |
+                | string | originator port                           |
+            
+                * The resulting channels are INDEPENDENT of the SESSION
+                    * Closing the session channel DOES NOT close the forwarded X11 channels
+                
+                * The recipient should respond with SSH_MSG_CHANNEL_OPEN_CONFIRMATION or SSH_MSG_CHANNEL_OPEN_FAILURE
+
+            * Implementations MUST reject any X11 channel open requests if they have not requested X11 forwarding
+
+    4. Environment Variable Passing
+        * Environment variables (envvars) may be passed to the shell/command to be started later
+        * Uncontrolled setting of envvars in a privileged process can be a securit hazard
+            * Thus, it is RECOMMENDED that implementations EITHER:
+                1. Maintain a list of allowable variable names
+                2. Only set environment variables after the Server process has dropped sufficient privileges
+        
+        * Environment variables may be requested by sending a SSH_MSG_CHANNEL_REQUEST message:
+            | Type    | Value                   |
+            |---------|-------------------------|
+            | byte    | SSH_MSG_CHANNEL_REQUEST |
+            | uint32  | recipient channel       |
+            | string  | "env"                   |
+            | boolean | want reply              |
+            | string  | variable name           |
+            | string  | variable value          |
+    
+    5. Starting a Shell or a Command
+        * Once the session has been set up, a program is started at the remote end
+            * The program can be a shell, application program, or subsystem with a host-independent name
+        * Only ONE of these requests can succeed per channel:
+            * This message will request that the user's default shell (typically defined in /etc/passwd in UNIX systems) be started at the other end:
+                | Type    | Value                   |
+                |---------|-------------------------|
+                | string  | "shell"                 |
+                | uint32  | recipient channel       |
+                | byte    | SSH_MSG_CHANNEL_REQUEST |
+                | boolean | want reply              |
+
+            * This message will request that the server start the execution of the given command:
+                | Type    | Value                   |
+                |---------|-------------------------|
+                | byte    | SSH_MSG_CHANNEL_REQUEST |
+                | uint32  | recipient channel       |
+                | string  | "exec"                  |
+                | boolean | want reply              |
+                | string  | command                 |
+                
+                * 'command' string may contain a path
+                * Normal precautions MUST be taken to prevent the execution of unauthorized commands
+            
+            * This (last) message executes a predefined subsystem:
+                | Type    | Value                   |
+                |---------|-------------------------|
+                | byte    | SSH_MSG_CHANNEL_REQUEST |
+                | uint32  | recipient channel       |
+                | string  | "subsystem"             |
+                | boolean | want reply              |
+                | string  | subsystem name          |
+
+                * It is expected that these will include a general file transfer mechanism, and possibly other features
+                    * Implementations MAY also allow configuring more such mechanisms
+                
+                * It is advisable for the subsystem protocol to have a "magic cookie" at the beginning of the protocol transaction to 
+                    distinguish it from arbitrary output generated by shell initialization scripts, etc...
+                    * This spurious output from the shell MAY be filtered out, either at the Server or at the Client
+                
+            * The Server SHOULD NOT halt the execution of the protocol stack when starting a shell or program
+            
+            * All input and output from these SHOULD be redirected to the channel or to the encrypted tunnel
+
+            * It is RECOMMENDED that the reply to these messages be requested and checked
+            
+            * The Client SHOULD ignore these messages
+
+            * Subsystem names follow the DNS extensibility naming convention outlined in [SSH-NUMBERS]()
+
+    6. Session Data Transfer
+        * Data transfer for a session is done using the SSH_MSG_CHANNEL_DATA and SSH_MSG_CHANNEL_EXTENDED_DATA packets and the window mechanism
+        * The extended data type SSH_EXTENDED_DATA_STDERR has been defined for stderr data.
+    
+    7. Window Dimension Change Message
+        * When the window (terminal) size changes on the Client side, it MAY send a message to the other side to inform it of the new dimensions:
+           | Type    | Value                   |
+           |---------|-------------------------|
+           | byte    | SSH_MSG_CHANNEL_REQUEST |
+           | uint32  | recipient channel       |
+           | string  | "window-change"         |
+           | boolean | FALSE                   |
+           | uint32  | terminal width, columns |
+           | uint32  | terminal height, rows   |
+           | uint32  | terminal width, pixels  |
+           | uint32  | terminal height, pixels |
+
+           * A response SHOULD NOT be sent to this message
+        
+    8. Local Flow Control
+        * On many systems, it can be determined if a pseudo-terminal is using control-S / control-Q flow control
+        
+        * When flow control is allowed, it is often desirable to do the flow control at the Client end to speed up responses to user requests
+            * This is facilitated by the following notification message, which is used by the Server to inform the Client when it can / cannot 
+                perform flow control (control-S / control-Q processing):
+                | Type    | Value                   |
+                |---------|-------------------------|
+                | byte    | SSH_MSG_CHANNEL_REQUEST |
+                | uint32  | recipient channel       |
+                | string  | "xon-xoff"              |
+                | boolean | FALSE                   |
+                | boolean | client can do           |
+                
+                * 'client can do' is TRUE - the client is allowed to perform control-S / control-Q flow control
+
+                * No response is sent to this message
+
+                * The Client MAY ignore this message                
+
+        * Initially, the Server is responsible for flow control
+            * Here, again, Client means the side ORIGINATING the session, and Server means the OTHER side
+
+    9. Signals
+        * A signal can be delivered to the remote process/service using the following message:
+            | Type    | Value                                  |
+            |---------|----------------------------------------|
+            | byte    | SSH_MSG_CHANNEL_REQUEST                |
+            | uint32  | recipient channel                      |
+            | string  | "signal"                               |
+            | boolean | FALSE                                  |
+            | string  | signal name (without the "SIG" prefix) |
+
+            * 'signal name' values will be encoded as discussed in the passage describing SSH_MSG_CHANNEL_REQUEST messages using
+                "exit-signal" in the next sub-section
+
+            * Some systems may not implement signals, in which case they SHOULD ignore this message
+
+    10. Returning Exit Status
+        * The Client MAY ignore these messages
+        * When the command running at the other end terminates, the following message can be sent to return the exit status of the command:
+            | Type    | Value                   |
+            |---------|-------------------------|
+            | byte    | SSH_MSG_CHANNEL_REQUEST |
+            | uint32  | recipient channel       |
+            | string  | "exit-status"           |
+            | boolean | FALSE                   |
+            | uint32  | exit_status             |
+            * Returning the status is RECOMMENDED
+            * No acknowledgement is sent for this message
+            * The channel MUST be closed with SSH_MSG_CHANNEL_CLOSE after this message
+        
+        * The remote command may also terminate violently due to a signal. Such a condition can be indicated by the following message:
+            | Type    | Value                                                                                                 |
+            |---------|-------------------------------------------------------------------------------------------------------|
+            | byte    | SSH_MSG_CHANNEL_REQUEST                                                                               |
+            | uint32  | recipient channel                                                                                     |
+            | string  | "exit-signal"                                                                                         |
+            | boolean | FALSE                                                                                                 |
+            | string  | signal name (without the "SIG" prefix)                                                                |
+            | boolean | core dumped                                                                                           |
+            | string  | error message in ISO-10646 UTF-8 encoding ([RFC 3629](https://datatracker.ietf.org/doc/html/rfc3629)) |
+            | string  | language tag ([RFC 3066](https://datatracker.ietf.org/doc/html/rfc3066))                              |
+            * A zero 'exit_status' usually means that the command terminated successfully
+            * 'signal name' is one of the following (from [POSIX](https://datatracker.ietf.org/doc/html/rfc4254#ref-POSIX)):
+                | signal name |
+                |-------------|
+                | ABRT        |
+                | ALRM        |
+                | FPE         |
+                | HUP         |
+                | ILL         |
+                | INT         |
+                | KILL        |
+                | PIPE        |
+                | QUIT        |
+                | SEGV        |
+                | TERM        |
+                | USR1        |
+                | USR2        |
+            
+                * Additional 'signal name' values MAY be sent in the format "sig-name@xyz", where 'sig-name' and 'xyz' may be anything an implementer
+                    wants (excluding the '@' sign, which is required)
+                    * However, it is suggested that if a 'configure' script is used, any non-standard 'signal name' values it finds should be encoded as
+                        "SIG@xyz.config.guess", where:
+                        * "SIG" is the 'signal name' without the "SIG" prefix
+                        * "xyz" is the host type, as determined by "config.guess"
+            
+            * 'error message' contains an additional textual explanation of the error message
+                * It may contain multiple lines separated by \<CR>\<LF> (Carriage Return - Line Feed) pairs
+                * The Client software MAY display this message to the user
+                    * If this is done, the Client software should takt the precautions discussed in [SSH-ARCH](./SSH-ARCH.md)
+
+7. TCP/IP Port Forwarding
+    1. Requesting Port Forwarding
+        * A party need not explicitly request forwardings from its own end to the other direction
+            * However, if it wishes that connections to a port on the OTHER side be forwarded to the LOCAL side, it MUST EXPLICITLY request this:
+                | Type    | Value                             |
+                |---------|-----------------------------------|
+                | byte    | SSH_MSG_GLOBAL_REQUEST            |
+                | string  | "tcpip-forward"                   |
+                | boolean | want reply                        |
+                | string  | address to bind (e.g., "0.0.0.0") |
+                | uint32  | port number to bind               |
+                * 'address to bind' - IP address (or domain name) on which connections for forwarding are to be accepted
+                    * Some strings used for this have special-case semantics:
+                        1. "" means that connections are to be accepted on all protocol families supported by the SSH implementation
+                        2. "0.0.0.0" means to listen on all IPv4 addresses
+                        3. "::" means to listen on all IPv6 addresses
+                        4. "localhost" means to listen on all protocol families supported by the SSH implementation on loopback addresses only
+                            (See [RFC 3330](https://datatracker.ietf.org/doc/html/rfc3330) and [RFC 3513](https://datatracker.ietf.org/doc/html/rfc3513))
+                        5. "127.0.0.1" indicates listening on the loopback interfaces for IPv4 
+                        6. "::1" indicates listening on the loopback interfaces for IPv6
+
+                * 'port number to bind' - port on which connections for forwarding are to be accepted
+                    * If a Client BOTH:
+                        1. Passes 0 as a 'port number to bind'
+                        2. Has 'want reply' as TRUE
+
+                        ...then the Server allocates the next available unprivilege port number and replies with
+                        the following message:
+                          | Type   | Value                             |
+                          |--------|-----------------------------------|
+                          | byte   | SSH_MSG_REQUEST_SUCCESS           |
+                          | uint32 | port that was bound on the server |
+
+                    * OTHERWISE, there is no response-specific data
+
+                * Note: the Client can still filter connections based on information passed in the open request
+
+                * Implementations should only allow forwarding privileged ports if the user has been authenticated as a priveleged user
+
+                * Port forwarding can be CANCELLED with the following message:
+                    | Type    | Value                               |
+                    |---------|-------------------------------------|
+                    | byte    | SSH_MSG_GLOBAL_REQUEST              |
+                    | string  | "cancel-tcpip-forward"              |
+                    | boolean | want reply                          |
+                    | string  | address_to_bind (e.g., "127.0.0.1") |
+                    | uint32  | port number to bind                 |
+                    * Note that channel open requests may be received until a reply to this message is received
+
+                * Client implementations SHOULD reject these messages, as they are normally only sent BY the Client
+    
+    2. TCP/IP Forwarding Channels
+        * When a connection comes to a port for which remote forwarding has been requested, a channel is opened
+            to forward the port to the other side:
+            

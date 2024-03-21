@@ -1,4 +1,4 @@
-## [SSH-USERAUTH](https://datatracker.ietf.org/doc/html/rfc4252) - The Secure Shell (SSH) Protocol Architecture ([RFC 4252](https://datatracker.ietf.org/doc/html/rfc4252)) Summary (by section)
+## [SSH-USERAUTH](https://datatracker.ietf.org/doc/html/rfc4252) - The Secure Shell (SSH) Authentication Protocol ([RFC 4252](https://datatracker.ietf.org/doc/html/rfc4252)) Summary (by section)
 This is a summary of "The Secure Shell (SSH) Authentication Protocol" ([RFC 4252](https://datatracker.ietf.org/doc/html/rfc4252))
 
 0. Abstract
@@ -366,17 +366,17 @@ This is a summary of "The Secure Shell (SSH) Authentication Protocol" ([RFC 4252
             | string  | user name on the client host in ISO-10646 UTF-8 encoding [RFC 3629](https://datatracker.ietf.org/doc/html/rfc3629) |
             | string    | signature |
             * The value of 'signature' is a signature with the private host key of the following data, in this order:
-            	| Type    | Value    |
-                |---------|-------------------------------------|
-                | string  | session identifier |
-                | byte    | SSH_MSG_USERAUTH_REQUEST |
-                | string  | user name |
-                | string  | service name |
-                | string  | "hostbased" |
-                | string  | public key algorithm for host key |
-                | string  | public host key and certificates for client host |
-                | string  | client host name expressed as the FQDN in US-ASCII |
-                | string  | user name on the client host in ISO-10646 UTF-8 encoding [RFC 3629](https://datatracker.ietf.org/doc/html/rfc3629) |
+                | Type   | Value                                                                                                              |
+                |--------|--------------------------------------------------------------------------------------------------------------------|
+                | string | session identifier                                                                                                 |
+                | byte   | SSH_MSG_USERAUTH_REQUEST                                                                                           |
+                | string | user name                                                                                                          |
+                | string | service name                                                                                                       |
+                | string | "hostbased"                                                                                                        |
+                | string | public key algorithm for host key                                                                                  |
+                | string | public host key and certificates for client host                                                                   |
+                | string | client host name expressed as the FQDN in US-ASCII                                                                 |
+                | string | user name on the client host in ISO-10646 UTF-8 encoding [RFC 3629](https://datatracker.ietf.org/doc/html/rfc3629) |
     			* The Server MUST verify:
     				1. That the host key actually belongs to the client host named in this message
     				2. That the given user on that host is allowed to log in

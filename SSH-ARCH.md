@@ -1,5 +1,5 @@
 ## [SSH-ARCH](https://datatracker.ietf.org/doc/html/rfc4251) - The Secure Shell (SSH) Protocol Architecture ([RFC 4251](https://datatracker.ietf.org/doc/html/rfc4251)) Summary (by section)
-This is a summary of "The Secure Shell (SSH) Protocol Architecture" ([RFC 4253](https://datatracker.ietf.org/doc/html/rfc4251))
+This is a summary of "The Secure Shell (SSH) Protocol Architecture" ([RFC 4251](https://datatracker.ietf.org/doc/html/rfc4251))
 
 0. Abstract
     * SSH-ARCH (RFC 4251) details the architecture of the SSH protocol, as well as the 

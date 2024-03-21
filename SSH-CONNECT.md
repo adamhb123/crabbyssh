@@ -1,0 +1,2 @@
+## [SSH-CONNECT](https://datatracker.ietf.org/doc/html/rfc4254) - The Secure Shell (SSH) Connection Protocol ([RFC 4254](https://datatracker.ietf.org/doc/html/rfc4254)) Summary (by section)
+This is a summary of "The Secure Shell (SSH) Connection Protocol" ([RFC 4254](https://datatracker.ietf.org/doc/html/rfc4254))

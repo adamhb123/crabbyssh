@@ -12,10 +12,9 @@ TODO
 * [SSH-TRANS.md](SSH-TRANS.md)
 * [SSH-USERAUTH](SSH-USERAUTH.md)
 #### In Progress
-
+* [SSH-CONNECT]()
 #### TODO
 
-* [SSH-CONNECT]()
 * [SSH-NUMBERS]()
 
 ### RFC links:

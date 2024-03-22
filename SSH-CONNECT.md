@@ -642,4 +642,153 @@ This is a summary of "The Secure Shell (SSH) Connection Protocol" ([RFC 4254](ht
     2. TCP/IP Forwarding Channels
         * When a connection comes to a port for which remote forwarding has been requested, a channel is opened
             to forward the port to the other side:
-            
+            | Type   | Value                      |
+            |--------|----------------------------|
+            | byte   | SSH_MSG_CHANNEL_OPEN       |
+            | string | "forwarded-tcpip"          |
+            | uint32 | sender channel             |
+            | uint32 | initial window size        |
+            | uint32 | maximum packet size        |
+            | string | address that was connected |
+            | uint32 | port that was connected    |
+            | string | originator IP address      |
+            | uint32 | originator port            |
+            * Implementations MUST reject these messages unless they have previously requested a remote
+            TCP/IP port forwarding with the given port number
+
+        * When a connection comes to a locally forwarded TCP/IP, the following packet is sent to the other side:
+            | Type   | Value                 |
+            |--------|-----------------------|
+            | byte   | SSH_MSG_CHANNEL_OPEN  |
+            | string | "direct-tcpip"        |
+            | uint32 | sender channel        |
+            | uint32 | initial window size   |
+            | uint32 | maximum packet size   |
+            | string | host to connect       |
+            | uint32 | port to connect       |
+            | string | originator IP address |
+            | uint32 | originator port       |
+
+            * 'host to connect' - specifies the TCP/IP host where the recipient should connect the channel
+            * 'port to connect' - specifies the TCP/IP port where the recipient should connect the channel
+            * 'originator IP address' - the numeric IP address of the machine from where the connection request originates
+            * 'originator port' - the port on the host from where the connection originated
+
+        * Forwarded TCP/IP channels are independent of any sessions
+            * Closing a session channel does not in any way imply that forwarded connections should be closed
+        
+        * Client implementations SHOULD reject direct TCP/IP open requests for security reasons
+
+8. Encoding of Terminal Modes
+    * All 'encoded terminal modes' (as passed in a pty request) are encoded into a byte stream
+        * It is intended that the coding be portable across different environments
+        * The stream consists of opcode-argument pairs wherein the opcode is a byte value
+            * Opcodes 1-159 have a single uint32 argument
+            * Opcodes 160-255 are not yet defined, and cause parsing to stop (they should only be used after
+                any other data)
+        * The stream is terminated by opcode TTY_OP_END (0x00)
+    
+    * The Client SHOULD put any modes it knows about into the byte stream
+        * The Server MAY ignore any modes it does not know about
+            * This allows some degree of machine-independence, at-least between systems that use a POSIX-like
+                tty interface
+                * This protocol can support other systems as well, but the Client may need to fill reasonable
+                    values for a number of parameters so the Server pty gets set to a reasonable mode (the Server
+                    leaves all unspecified mode bits in their default values, and only some combinations
+                    make sense)
+        
+    * The naming of opcode values mostly follows the POSIX terminal mode flags
+        * The opcode values are as follows:
+            | Opcode | Mnemonic      | Description                                                                                                                       |
+            |--------|---------------|-----------------------------------------------------------------------------------------------------------------------------------|
+            | 0      | TTY_OP_END    | Indicates end of options.                                                                                                         |
+            | 1      | VINTR         | Interrupt character; 255 if none.  Similarly for the other characters.  Not all of these characters are supported on all systems. |
+            | 2      | VQUIT         | The quit character (sends SIGQUIT signal on POSIX systems).                                                                       |
+            | 3      | VERASE        | Erase the character to left of the cursor.                                                                                        |
+            | 4      | VKILL         | Kill the current input line.                                                                                                      |
+            | 5      | VEOF          | End-of-file character (sends EOF from the terminal).                                                                              |
+            | 6      | VEOL          | End-of-line character in addition to carriage return and/or linefeed.                                                             |
+            | 7      | VEOL2         | Additional end-of-line character.                                                                                                 |
+            | 8      | VSTART        | Continues paused output (normally control-Q).                                                                                     |
+            | 9      | VSTOP         | Pauses output (normally control-S).                                                                                               |
+            | 10     | VSUSP         | Suspends the current program.                                                                                                     |
+            | 11     | VDSUSP        | Another suspend character.                                                                                                        |
+            | 12     | VREPRINT      | Reprints the current input line.                                                                                                  |
+            | 13     | VWERASE       | Erases a word left of cursor.                                                                                                     |
+            | 14     | VLNEXT        | Enter the next character typed literally, even if it is a special character                                                       |
+            | 15     | VFLUSH        | Character to flush output.                                                                                                        |
+            | 16     | VSWTCH        | Switch to a different shell layer.                                                                                                |
+            | 17     | VSTATUS       | Prints system status line (load, command, pid, etc).                                                                              |
+            | 18     | VDISCARD      | Toggles the flushing of terminal output.                                                                                          |
+            | 30     | IGNPAR        | The ignore parity flag.  The parameter SHOULD be 0 if this flag is FALSE, and 1 if it is TRUE.                                    |
+            | 31     | PARMRK        | Mark parity and framing errors.                                                                                                   |
+            | 32     | INPCK         | Enable checking of parity errors.                                                                                                 |
+            | 33     | ISTRIP        | Strip 8th bit off characters.                                                                                                     |
+            | 34     | INLCR         | Map NL into CR on input.                                                                                                          |
+            | 35     | IGNCR         | Ignore CR on input.                                                                                                               |
+            | 36     | ICRNL         | Map CR to NL on input.                                                                                                            |
+            | 37     | IUCLC         | Translate uppercase characters to lowercase.                                                                                      |
+            | 38     | IXON          | Enable output flow control.                                                                                                       |
+            | 39     | IXANY         | Any char will restart after stop.                                                                                                 |
+            | 40     | IXOFF         | Enable input flow control.                                                                                                        |
+            | 41     | IMAXBEL       | Ring bell on input queue full.                                                                                                    |
+            | 50     | ISIG          | Enable signals INTR, QUIT, [D]SUSP.                                                                                               |
+            | 51     | ICANON        | Canonicalize input lines.                                                                                                         |
+            | 52     | XCASE         | Enable input and output of uppercase characters by preceding their lowercase equivalents with "\".                                |
+            | 53     | ECHO          | Enable echoing.                                                                                                                   |
+            | 54     | ECHOE         | Visually erase chars.                                                                                                             |
+            | 55     | ECHOK         | Kill character discards current line.                                                                                             |
+            | 56     | ECHONL        | Echo NL even if ECHO is off.                                                                                                      |
+            | 57     | NOFLSH        | Don't flush after interrupt.                                                                                                      |
+            | 58     | TOSTOP        | Stop background jobs from output.                                                                                                 |
+            | 59     | IEXTEN        | Enable extensions.                                                                                                                |
+            | 60     | ECHOCTL       | Echo control characters as ^(Char).                                                                                               |
+            | 61     | ECHOKE        | Visual erase for line kill.                                                                                                       |
+            | 62     | PENDIN        | Retype pending input.                                                                                                             |
+            | 70     | OPOST         | Enable output processing.                                                                                                         |
+            | 71     | OLCUC         | Convert lowercase to uppercase.                                                                                                   |
+            | 72     | ONLCR         | Map NL to CR-NL.                                                                                                                  |
+            | 73     | OCRNL         | Translate carriage return to newline (output).                                                                                    |
+            | 74     | ONOCR         | Translate newline to carriage return-newline (output).                                                                            |
+            | 75     | ONLRET        | Newline performs a carriage return (output).                                                                                      |
+            | 90     | CS7           | 7 bit mode.                                                                                                                       |
+            | 91     | CS8           | 8 bit mode.                                                                                                                       |
+            | 92     | PARENB        | Parity enable.                                                                                                                    |
+            | 93     | PARODD        | Odd parity, else even.                                                                                                            |
+            | 128    | TTY_OP_ISPEED | Specifies the input baud rate in bits per second.                                                                                 |
+            | 129    | TTY_OP_OSPEED | Specifies the output baud rate in bits per second.                                                                                |
+
+9. Summary of Message Numbers
+    * The following is a summary of messages and their associated message number:
+        | Symbolic Name                     | Value |
+        |-----------------------------------|-------|
+        | SSH_MSG_GLOBAL_REQUEST            | 80    |
+        | SSH_MSG_REQUEST_SUCCESS           | 81    |
+        | SSH_MSG_REQUEST_FAILURE           | 82    |
+        | SSH_MSG_CHANNEL_OPEN              | 90    |
+        | SSH_MSG_CHANNEL_OPEN_CONFIRMATION | 91    |
+        | SSH_MSG_CHANNEL_OPEN_FAILURE      | 92    |
+        | SSH_MSG_CHANNEL_WINDOW_ADJUST     | 93    |
+        | SSH_MSG_CHANNEL_DATA              | 94    |
+        | SSH_MSG_CHANNEL_EXTENDED_DATA     | 95    |
+        | SSH_MSG_CHANNEL_EOF               | 96    |
+        | SSH_MSG_CHANNEL_CLOSE             | 97    |
+        | SSH_MSG_CHANNEL_REQUEST           | 98    |
+        | SSH_MSG_CHANNEL_SUCCESS           | 99    |
+        | SSH_MSG_CHANNEL_FAILURE           | 100   |
+
+10. IANA Considerations
+    * See original document
+
+11. Security Considerations
+    * This protocol is assumed to run on top of a secure, authenticated transport.  User authentication and protection against
+    network-level attacks are assumed to be provided by the underlying protocols
+
+    * Full security considerations for this protocol are provided in [SSH-ARCH](./SSH-ARCH.md)
+
+    * Specific to THIS document, it is RECOMMENDED that implementations disable all potentially dangerous features IF the host key has changed
+        without notice or explanation
+        * E.g., agent forwarding, X11 forwarding, and TCP/IP forwarding
+
+12. References
+    * See original document

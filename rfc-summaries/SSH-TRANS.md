@@ -266,7 +266,7 @@ This is a summary of "The Secure Shell (SSH) Transport Layer Protocol" ([RFC 425
             [SSH-ARCH](https://datatracker.ietf.org/doc/html/rfc4251) and [SSH-NUMBERS](https://datatracker.ietf.org/doc/html/rfc4250)
 
     4. Data Integrity
-        * Each packet includes a MAC computed from a shared securet, packet sequence 
+        * Each packet includes a MAC computed from a shared secret, packet sequence 
         number, and the contents of the packet, used for data integrity protection.
         * The message authentication algorithm and key are negotiated during key exchange.
         * Initially, no MAC algorithm will be in effect, and its length MUST be zero.

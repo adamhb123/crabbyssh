@@ -16,8 +16,8 @@ TODO
 
 
 ### RFC links:
-* [SSH-TRANS](https://datatracker.ietf.org/doc/html/rfc4253)
 * [SSH-ARCH](https://datatracker.ietf.org/doc/html/rfc4251)
+* [SSH-TRANS](https://datatracker.ietf.org/doc/html/rfc4253)
 * [SSH-USERAUTH](https://datatracker.ietf.org/doc/html/rfc4252)
 * [SSH-CONNECT](https://datatracker.ietf.org/doc/html/rfc4254)
 * [SSH-NUMBERS](https://datatracker.ietf.org/doc/html/rfc4250)

@@ -184,37 +184,43 @@ This is a summary of "The Secure Shell (SSH) Transport Layer Protocol" ([RFC 425
             * However, in practice it is RECOMMENDED that the same
             algorithm be used in both directions.
         * The following algorithms are defined:
-                | Name           | Necessity   | Description                                                                |
-                |----------------|-------------|----------------------------------------------------------------------------|
-                | 3des-cbc       | REQUIRED    | three-key 3DES in CBC mode                                                 |
-                | blowfish-cbc   | OPTIONAL    | Blowfish in CBC mode                                                       |
-                | twofish256-cbc | OPTIONAL    | Twofish in CBC mode,  with a 256-bit key                                   |
-                | twofish-cbc    | OPTIONAL    | alias for "twofish256-cbc" (this is being retained for historical reasons) |
-                | twofish192-cbc | OPTIONAL    | Twofish with a 192-bit key                                                 |
-                | twofish128-cbc | OPTIONAL    | Twofish with a 128-bit key                                                 |
-                | aes256-cbc     | OPTIONAL    | AES in CBC mode, with a 256-bit key                                        |
-                | aes192-cbc     | OPTIONAL    | AES with a 192-bit key                                                     |
-                | aes128-cbc     | RECOMMENDED | AES with a 128-bit key                                                     |
-                | serpent256-cbc | OPTIONAL    | Serpent in CBC mode, with a 256-bit key                                    |
-                | serpent192-cbc | OPTIONAL    | Serpent with a 192-bit key                                                 |
-                | serpent128-cbc | OPTIONAL    | Serpent with a 128-bit key                                                 |
-                | arcfour        | OPTIONAL    | the ARCFOUR stream cipher with a 128-bit key                               |
-                | idea-cbc       | OPTIONAL    | IDEA in CBC mode                                                           |
-                | cast128-cbc    | OPTIONAL    | CAST-128 in CBC mode                                                       |
-                | none           | OPTIONAL    | no encryption - NOT RECOMMENDED                                            |
+            | Name           | Necessity   | Description                                                                |
+            |----------------|-------------|----------------------------------------------------------------------------|
+            | 3des-cbc       | REQUIRED    | three-key 3DES in CBC mode                                                 |
+            | blowfish-cbc   | OPTIONAL    | Blowfish in CBC mode                                                       |
+            | twofish256-cbc | OPTIONAL    | Twofish in CBC mode,  with a 256-bit key                                   |
+            | twofish-cbc    | OPTIONAL    | alias for "twofish256-cbc" (this is being retained for historical reasons) |
+            | twofish192-cbc | OPTIONAL    | Twofish with a 192-bit key                                                 |
+            | twofish128-cbc | OPTIONAL    | Twofish with a 128-bit key                                                 |
+            | aes256-cbc     | OPTIONAL    | AES in CBC mode, with a 256-bit key                                        |
+            | aes192-cbc     | OPTIONAL    | AES with a 192-bit key                                                     |
+            | aes128-cbc     | RECOMMENDED | AES with a 128-bit key                                                     |
+            | serpent256-cbc | OPTIONAL    | Serpent in CBC mode, with a 256-bit key                                    |
+            | serpent192-cbc | OPTIONAL    | Serpent with a 192-bit key                                                 |
+            | serpent128-cbc | OPTIONAL    | Serpent with a 128-bit key                                                 |
+            | arcfour        | OPTIONAL    | the ARCFOUR stream cipher with a 128-bit key                               |
+            | idea-cbc       | OPTIONAL    | IDEA in CBC mode                                                           |
+            | cast128-cbc    | OPTIONAL    | CAST-128 in CBC mode                                                       |
+            | none           | OPTIONAL    | no encryption - NOT RECOMMENDED                                            |
 
-                Notes on algorithms:
+            * Notes on algorithms:
             1. "3des-cbc" - a three-key triple-DES (encrypt-decrypt-encrypt) algorithm:
                 * Block cipher with 8-byte blocks
+
                 * The first 8 bytes of the key are used for the first encryption
+
                 * The next 8 bytes for the decryption
+
                 * The following 8 bytes for the final encryption
+
                 * The above require 24 bytes of key data, of which 168 bits are
                 actually used
+
                 * To implement CBC mode, outer chaining MUST be used (only one initialization vector)
+
                 * See [FIPS-46-3](https://datatracker.ietf.org/doc/html/rfc4253#ref-FIPS-46-3)
-                * Since this algorithm only has an effective key length of 112 bits,
-                it does not meet the specifications that SSH encryption algorithms 
+
+                * Since this algorithm only has an effective key length of 112 bits, it does not meet the specifications that SSH encryption algorithms 
                 should use keys of 128-bits or more. Nonetheless, this algorithm is
                 still REQUIRED for historical reasons. In the future, another
                 algorithm with better strength may make 3des-cbc deprecated.

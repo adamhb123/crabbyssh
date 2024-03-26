@@ -6,16 +6,14 @@ TODO
 
 
 ## SSH RFC Collection
-### Summaries (rough-drafts, need to fix formatting):
-#### Complete
-* [SSH-ARCH.md](SSH-ARCH.md)
-* [SSH-TRANS.md](SSH-TRANS.md)
-* [SSH-USERAUTH](SSH-USERAUTH.md)
-#### In Progress
-* [SSH-CONNECT]()
-#### TODO
+### Summaries 
+#### Complete (rough-drafts, need to fix formatting)
+* [SSH-ARCH.md](./SSH-ARCH.md)
+* [SSH-TRANS.md](./SSH-TRANS.md)
+* [SSH-USERAUTH](./SSH-USERAUTH.md)
+* [SSH-CONNECT](./SSH-CONNECT.md)
+* [SSH-NUMBERS](./SSH-NUMBERS.md)
 
-* [SSH-NUMBERS]()
 
 ### RFC links:
 * [SSH-TRANS](https://datatracker.ietf.org/doc/html/rfc4253)

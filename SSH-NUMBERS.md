@@ -403,7 +403,75 @@ This is a summary of "The Secure Shell (SSH) Protocol Assigned Numbers" ([RFC 42
             * There are no initial assignments of the Connection Protocol Subsystem Names.
 
     10. Key Exchange Method Names
+        * The name "diffie-hellman-group1-sha1" is used for a key exchange method using an Oakley group, as defined in [RFC2409](https://www.rfc-editor.org/rfc/rfc2409)
         
-        0. Key Exchange Method Names
-            * The name "diffie-hellman-group1-sha1" is used for a key exchange method using an Oakley group, as defined in [RFC2409](https://www.rfc-editor.org/rfc/rfc2409)
+        * SSH maintains its own group identifier space logically distinct from Oakley
+            [[RFC 2412](https://datatracker.ietf.org/doc/html/rfc2412)] and IKE
+            * However, for one additional group, the working Group adopted the number assigned by
+                [[RFC 3526](https://datatracker.ietf.org/doc/html/rfc3526)], using "diffie-hellman-group14-sha1"
+                for the name of the second defined group
             
+        * Implementations should treat these names as opaque identifiers, and should NOT assume any relationship between
+            the groups used by SSH and the groups defined for IKE
+        
+        * Initial assignments are as follows:
+            | Method Name                 | Reference                |
+            |-----------------------------|--------------------------|
+            | diffie-hellman-group1-sha1  | [[SSH-TRANS](./SSH-TRANS.md), Section 8.1] |
+            | diffie-hellman-group14-sha1 | [[SSH-TRANS](./SSH-TRANS.md), Section 8.2] |
+
+    11. Assigned Algorithm Names
+        1. Encryption Algorithm Names
+            * Initial assignments are as follows:
+                | Encryption Algorithm Name | Reference                                       |
+                |---------------------------|-------------------------------------------------|
+                | 3des-cbc                  | [[SSH-TRANS](./SSH-TRANS.md), Section 6.3]      |
+                | blowfish-cbc              | [[SSH-TRANS](./SSH-TRANS.md), Section 6.3]      |
+                | twofish256-cbc            | [[SSH-TRANS](./SSH-TRANS.md), Section 6.3]      |
+                | twofish-cbc               | [[SSH-TRANS](./SSH-TRANS.md), Section 6.3]      |
+                | twofish192-cbc            | [[SSH-TRANS](./SSH-TRANS.md), Section 6.3]      |
+                | twofish128-cbc            | [[SSH-TRANS](./SSH-TRANS.md), Section 6.3]      |
+                | aes256-cbc                | [[SSH-TRANS](./SSH-TRANS.md), Section 6.3]      |
+                | aes192-cbc                | [[SSH-TRANS](./SSH-TRANS.md), Section 6.3]      |
+                | aes128-cbc                | [[SSH-TRANS](./SSH-TRANS.md), Section 6.3]      |
+                | serpent256-cbc            | [[SSH-TRANS](./SSH-TRANS.md), Section 6.3]      |
+                | serpent192-cbc            | [[SSH-TRANS](./SSH-TRANS.md), Section 6.3]      |
+                | serpent128-cbc            | [[SSH-TRANS](./SSH-TRANS.md), Section 6.3]      |
+                | arcfour                   | [[SSH-TRANS](./SSH-TRANS.md), Section 6.3]      |
+                | idea-cbc                  | [[SSH-TRANS](./SSH-TRANS.md), Section 6.3]      |
+                | cast128-cbc               | [[SSH-TRANS](./SSH-TRANS.md), Section 6.3]      |
+                | none                      | [[SSH-TRANS](./SSH-TRANS.md), Section 6.3]      |
+                | des-cbc                   | [FIPS-46-3](https://datatracker.ietf.org/doc/html/rfc4250#ref-FIPS-46-3) HISTORIC; See page 4 of [FIPS-46-3](https://datatracker.ietf.org/doc/html/rfc4250#ref-FIPS-46-3) |
+        
+        2. MAC Algorithm Names
+            * Initial assignments are as follows:
+                | MAC Algorithm Name | Reference                                  |
+                |--------------------|--------------------------------------------|
+                | hmac-sha1          | [[SSH-TRANS](./SSH-TRANS.md), Section 6.4] |
+                | hmac-sha1-96       | [[SSH-TRANS](./SSH-TRANS.md), Section 6.4] |
+                | hmac-md5           | [[SSH-TRANS](./SSH-TRANS.md), Section 6.4] |
+                | hmac-md5-96        | [[SSH-TRANS](./SSH-TRANS.md), Section 6.4] |
+                | none               | [[SSH-TRANS](./SSH-TRANS.md), Section 6.4] |
+            
+        3. Public Key Algorithm Names
+            * Initial assignments are as follows:
+                | Public Key Algorithm Name | Reference                                  |
+                |---------------------------|--------------------------------------------|
+                | ssh-dss                   | [[SSH-TRANS](./SSH-TRANS.md), Section 6.6] |
+                | ssh-rsa                   | [[SSH-TRANS](./SSH-TRANS.md), Section 6.6] |
+                | pgp-sign-rsa              | [[SSH-TRANS](./SSH-TRANS.md), Section 6.6] |
+                | pgp-sign-dss              | [[SSH-TRANS](./SSH-TRANS.md), Section 6.6] |
+            
+        4. Compression Algorithm Names
+            * Initial assignments are as follows:
+                | Compression Algorithm Name | Reference                                  |
+                |----------------------------|--------------------------------------------|
+                | none                       | [[SSH-TRANS](./SSH-TRANS.md), Section 6.2] |
+                | zlib                       | [[SSH-TRANS](./SSH-TRANS.md), Section 6.2] |
+            
+5. Security Considerations
+    * This protocol provides a secure encrypted channel over an insecure network.
+    * Full security considerations for this protocol are provided in [SSH-ARCH](./SSH-ARCH.md)
+
+6. References
+    * See original document for details

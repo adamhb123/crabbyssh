@@ -262,18 +262,18 @@ This is a summary of "The Secure Shell (SSH) Protocol Architecture" ([RFC 4251](
 
     * name-list
     	* String containing a comma-separated list of names
-    	* Represented as a uint32 containing its length (number of bytes that follow)
+    	* Represented as a uint32 containing its length (number of bytes that follow) followed by a comma-separated list of zero or more
+      names
     	* A name MUST have non-zero length
     	* All elements contained MUST be in US-ASCII
-    	* Order of elements (names) ma or may not be significant
+    	* Order of elements (names) may or may not be significant
     	* Terminating null characters MUST NOT be used
-    	* 
    		* Examples:
-            | Value (hex)     | Representation (hex)                |
-            |-----------------|-------------------------------------|
-            | (), the empty name-list       | 00 00 00 00   |
-            | ("zlib")        | 00 00 00 04 7a 6c 69 62  |
-            | ("zlib,none")        |00 00 00 09 7a 6c 69 62 2c 6e 6f 6e 65|
+            | Value (hex)             | Representation (hex)                   |
+            |-------------------------|----------------------------------------|
+            | (), the empty name-list | 00 00 00 00                            |
+            | ("zlib")                | 00 00 00 04 7a 6c 69 62                |
+            | ("zlib,none")           | 00 00 00 09 7a 6c 69 62 2c 6e 6f 6e 65 |
             
 6. Algorithm and Method Naming
 	* Hash, encryption, integrity, and key exchange algorithms or methods are referred to by name
@@ -282,18 +282,26 @@ This is a summary of "The Secure Shell (SSH) Protocol Architecture" ([RFC 4251](
 	* Names MUST be case-sensitive
 	
     Two formats exist for algorithm and method names:
-    	1. Names that do not contain an "@" sign are reserved to be assigned by IETF CONSENSUS
-    		* E.g., "3des-cbc"; "sha-1"; "hmac-sha1"; "zlib"
-    		* Names of this format are only valid if they are first registered with the IANA
-    		* Registered names MUST NOT contain an "@" sign, comma (","), whitespace, control characters (ASCII <= 32), or \<DEL> (ASCII 127)
+
+    1. Names that do not contain an "@" sign are reserved to be assigned by IETF CONSENSUS
+        * E.g., "3des-cbc"; "sha-1"; "hmac-sha1"; "zlib"
+
+        * Names of this format are only valid if they are first registered with the IANA
+
+        * Registered names MUST NOT contain an "@" sign, comma (","), whitespace, control characters (ASCII <= 32), or \<DEL> (ASCII 127)
     		* Names are case-sensitive, and MUST NOT be longer than 64 characters
-    	2. Additional algorithms or methods may be defined in the format name@domainname
-    		* E.g., "ourcipher-cbc@example.com"
-    		* These names MUST be printable US-ASCII strings, and MUST NOT contain a comma (","), whitespace, control characters (ASCII <= 32), or \<DEL> (ASCII 127)
-			* These names MUST only have a single "@" sign
-			* The part following "@" MUST be a valid, fully-qualified domain name, controlled by the person or organization defining the name
-			* Names are case-sensitive, and MUST NOT be longer than 64 characters
-	
+
+    2. Additional algorithms or methods may be defined in the format name@domainname
+        * E.g., "ourcipher-cbc@example.com"
+
+        * These names MUST be printable US-ASCII strings, and MUST NOT contain a comma (","), whitespace, control characters (ASCII <= 32), or \<DEL> (ASCII 127)
+        
+        * These names MUST only have a single "@" sign
+        
+        * The part following "@" MUST be a valid, fully-qualified domain name, controlled by the person or organization defining the name
+        
+        * Names are case-sensitive, and MUST NOT be longer than 64 characters
+
 7. Message Numbers
 	* SSH packets have message numbers in the range 1-255. These numbers have been allocated as follows:
 		* Transport Layer Protocol:

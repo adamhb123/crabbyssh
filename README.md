@@ -8,11 +8,11 @@ TODO
 ## SSH RFC Collection
 ### Summaries 
 #### Complete (rough-drafts, need to fix formatting)
-* [SSH-ARCH.md](./SSH-ARCH.md)
-* [SSH-TRANS.md](./SSH-TRANS.md)
-* [SSH-USERAUTH](./SSH-USERAUTH.md)
-* [SSH-CONNECT](./SSH-CONNECT.md)
-* [SSH-NUMBERS](./SSH-NUMBERS.md)
+* [SSH-ARCH.md](./rfc-summaries/SSH-ARCH.md)
+* [SSH-TRANS.md](./rfc-summaries/SSH-TRANS.md)
+* [SSH-USERAUTH](./rfc-summaries/SSH-USERAUTH.md)
+* [SSH-CONNECT](./rfc-summaries/SSH-CONNECT.md)
+* [SSH-NUMBERS](./rfc-summaries/SSH-NUMBERS.md)
 
 
 ### RFC links:

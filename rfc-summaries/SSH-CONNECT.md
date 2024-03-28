@@ -243,8 +243,8 @@ This is a summary of "The Secure Shell (SSH) Connection Protocol" ([RFC 4254](ht
         
             * No explicit response is sent to this message
                 * However, the application may send EOF to whatever is at the other end of the channel
-                    * TODO: This requires clarification - is the \<EOF> control character sent, or is this message (SSH_MSG_CHANNEL_EOF) sent???
-                        I am assuming the former, but am unsure
+                    * TODO: This requires clarification - is the \<EOF> control character sent, or is this message (SSH_MSG_CHANNEL_EOF) sent?
+                        I am assuming the latter, but am unsure
             
             * Note that the channel remains open after this message
                 * More data may be sent in the OTHER direction

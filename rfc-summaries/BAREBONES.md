@@ -3,6 +3,8 @@ This document aims to synthesize the information from each of the SSH RFC docume
 
 It includes the bare minimum information required to implement the SSH protocol.
 
+Any implementation-specific choices are expressed within this document.
+
 Note that CrabbySSH is not (currently) concerned with working with any
 non-2.0 SSH implementations, and so those considerations are excluded
 
@@ -11,15 +13,15 @@ non-2.0 SSH implementations, and so those considerations are excluded
     * Client-side local database associates host name with public host key
 
 2. Data types:
-    | Identifier | Description |
-    |-|-|
-    | byte | 8-bit value |
-    | boolean | 8-bit value; 0 == FALSE, 1 == TRUE; values != 0 interpreted as TRUE |
-    | uint32 | 32-bit unsigned integer; four bytes, big-endian; E.g., the value `699921578 (0x29b7f4aa)` is stored as `29 b7 f4 aa` |
-    | uint64 | 64-bit unsigned integer; eight bytes, big-endian |
-    | string | Arbitrary length, contains arbitrary data; terminating null characters NOT used; US-ASCII for internal names; UTF-8 used for text that may be displayed; E.g., the string "testing now" is represented as `00 00 00 0B t e s t i n g 20 n o w` |
-    | mpint | Multiple precision integer in 2's complement; Stored as `string`; 8 bits per byte; Big-endian; 0 stored as `string` with zero bytes of data; Unnecessary leading bytes with the value 0 or 255 MUST NOT be included; See original document for examples |
-    | name-list | string comma-separated list of names; represented by a uint32 containing its length (number of bytes that follow) followed by a comma-separated list of zero or more names; each name MUST have a non-zero length, MUST NOT contain a comma; each name in list is US-ASCII |
+    | Identifier | Description                                                                                                                                                                                                                                                                |
+    |------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+    | byte       | 8-bit value                                                                                                                                                                                                                                                                |
+    | boolean    | 8-bit value; 0 == FALSE, 1 == TRUE; values != 0 interpreted as TRUE                                                                                                                                                                                                        |
+    | uint32     | 32-bit unsigned integer; four bytes, big-endian; E.g., the value `699921578 (0x29b7f4aa)` is stored as `29 b7 f4 aa`                                                                                                                                                       |
+    | uint64     | 64-bit unsigned integer; eight bytes, big-endian                                                                                                                                                                                                                           |
+    | string     | Arbitrary length, contains arbitrary data; terminating null characters NOT used; US-ASCII for internal names; UTF-8 used for text that may be displayed; E.g., the string "testing now" is represented as `00 00 00 0B t e s t i n g 20 n o w`                             |
+    | mpint      | Multiple precision integer in 2's complement; Stored as `string`; 8 bits per byte; Big-endian; 0 stored as `string` with zero bytes of data; Unnecessary leading bytes with the value 0 or 255 MUST NOT be included; See original document for examples                    |
+    | name-list  | string comma-separated list of names; represented by a uint32 containing its length (number of bytes that follow) followed by a comma-separated list of zero or more names; each name MUST have a non-zero length, MUST NOT contain a comma; each name in list is US-ASCII |
 
 3. Message Numbers
     * SSH message numbers are in the range 1-255, allocated as follows:
@@ -400,5 +402,379 @@ non-2.0 SSH implementations, and so those considerations are excluded
     * Numbers 30 - 49 are used for kex packets - different kex methods may reuse message numbers in this range
 
 ## SSH-USERAUTH
+* Runs over the SSH Transport Layer Protocol
+
+1. Authentication Requests
+    * All auth requests MUST use the following format:
+        | Type   | Value                                                                                           |
+        |--------|-------------------------------------------------------------------------------------------------|
+        | byte   | SSH_MSG_USERAUTH_REQUEST                                                                        |
+        | string | user name in ISO-10646 UTF-8 encoding [RFC 3629](https://datatracker.ietf.org/doc/html/rfc3629) |
+        | string | service name in US-ASCII                                                                        |
+        | string | method name in US-ASCII                                                                         |
+
+        * The following 'method name' values are defined:
+            | Method Name | Necessity       |
+            |-------------|-----------------|
+            | "publickey" | REQUIRED        |
+            | "password"  | OPTIONAL        |
+            | "hostbased" | OPTIONAL        |
+            | "none"      | NOT RECOMMENDED |
+
+        * CrabbySSH implements "publickey" and "password" encryption
+
+    1. Process:
+        1. Client sends SSH_MSG_USERAUTH_REQUEST to Server
+        2. Server either ACCEPTS or REJECTS the request:
+            * If ACCEPTS:
+                1. Perform authentication, exchanging further messages as is necessary (dependent on the method used)
+                    * If authentication fails, then Server REJECTS (see below)
+                2. Respond with SSH_MSG_USERAUTH_SUCCESS, only once (when authentication is FULLY complete)
+                    | Type    | Value                             |
+                    |---------|-----------------------------------|
+                    | byte    | SSH_MSG_USERAUTH_SUCCESS          |
+
+            * If REJECTS:
+                1. Respond with SSH_MSG_USERAUTH_FAILURE:
+                    | Type    | Value                             |
+                    |---------|-----------------------------------|
+                    | byte    | SSH_MSG_USERAUTH_FAILURE          |
+                    | string  | authentications that can continue |
+                    | boolean | partial success                   |
+                    * 'partial success' MUST be:
+                        * TRUE if the authentication request to which this is a response was successful
+                        * FALSE if the request was not successfully processed
+        
+        3.  Completion of User Authentication (Server authenticated user and sent SSH_MSG_USERAUTH_SUCCESS)
+            * Authentication-related messages received after SSH_MSG_USERAUTH_SUCCESS SHOULD be ignored
+            * After sending SSH_MSG_USERAUTH_SUCCESS, the Server starts the requested service
+            * Any non-authentication messages sent by the client after the request that resulted in SSH_MSG_USERAUTH_SUCCESS being sent MUST be
+        passed to the service being run on top of this protocol.
+
+        4. Miscellaneous
+            1. If Client sends SSH_MSG_USERAUTH_REQUEST w/ 'method name' == "none":
+                * If Server requires no authentication for the user, Respond with SSH_MSG_USERAUTH_SUCCESS
+                * Otherwise,  Server sends  SSH_MSG_USERAUTH_FAILURE and MAY return with it a list of methods that may
+                continue in its 'authentications that can continue' value
+                * <b>NOTE:</b> Server MUST NOT list "none" as a supported 'method name'
+
+            2. Banner Message
+                * Server may send SSH_MSG_USERAUTH_BANNER at any time AFTER the Authentication Protocol starts, and BEFORE
+                authentication is successful:
+                    | Type   | Value                                                                                         |
+                    |--------|-----------------------------------------------------------------------------------------------|
+                    | byte   | SSH_MSG_USERAUTH_BANNER                                                                       |
+                    | string | message in ISO-10646 UTF-8 encoding [RFC 3629](https://datatracker.ietf.org/doc/html/rfc3629) |
+                    | string | language tag [RFC 3066](https://datatracker.ietf.org/doc/html/rfc3066)                        |
+                    * 'message' may consist of multiple lines, with line-breaks indicated by \<CR>\<LF> pairs
+                    * The Client SHOULD display the 'message' on the screen by default
+                        * However, the client software may allow the user to explicitly disable the display of banners from the server
+                
+                    * If 'message' is displayed, control character filtering discussed in [SSH-ARCH](SSH-ARCH.md) SHOULD be used to avoid
+                    attacks by sending terminal control characters
+            
+    2. Authentication Protocol Message Numbers
+        | Code                     | Value |
+        |--------------------------|-------|
+        | SSH_MSG_USERAUTH_REQUEST | 50    |
+        | SSH_MSG_USERAUTH_FAILURE | 51    |
+        | SSH_MSG_USERAUTH_SUCCESS | 52    |
+        | SSH_MSG_USERAUTH_BANNER  | 53    |
+        * Client sends SSH_MSG_USERAUTH_REQUEST messages ONLY
+        * In addition to the above, message numbers in the range 60-79 exist, and are reserved for method-specific messages
+            * These messages are only sent by the Server
+            * Different authentication methods reuse the same message numbers
+
+    3. Authentication Method: "publickey"
+        1. Process
+            1. Client sends signature created with the user's private key
+
+            2. Server checks that the key is a valid authenticator for the user, AND that the signature is valid
+                * Authentication is ACCEPTED if both checks hold
+                * Authentication is REJECTED if one or more checks fail
+
+            * Additional authentications may be required after successful authorization
+
+        2. Messages
+            1. Client MAY query whether authentication using the "publickey" method would be acceptable:
+                | Type    | Value                                                                                           |
+                |---------|-------------------------------------------------------------------------------------------------|
+                | byte    | SSH_MSG_USERAUTH_REQUEST                                                                        |
+                | string  | user name in ISO-10646 UTF-8 encoding [RFC 3629](https://datatracker.ietf.org/doc/html/rfc3629) |
+                | string  | service name in US-ASCII                                                                        |
+                | string  | "publickey"                                                                                     |
+                | boolean | FALSE                                                                                           |
+                | string  | public key algorithm name                                                                       |
+                | string  | public key blob                                                                                 |
+                * 'public key algorithm name' values are defined in the Transport Layer specification [SSH-TRANS](SSH-TRANS.md)
+				* 'public key blob' may contain certificates
+				* Any public key algorithm may be offered for use in authentication.
+
+            2. Server MUST respond to the above with:
+                1. SSH_MSG_USERAUTH_FAILURE if any of the values received ('public key algorithm name', 'public key blob', 
+                etc...) are unsatisfactory
+
+                2. SSH_MSG_USERAUTH_PK_OK if the values received are satisfactory:
+                    | Type    | Value                                    |
+                    |---------|------------------------------------------|
+                    | byte    | SSH_MSG_USERAUTH_PK_OK                   |
+                    | string  | user name                                |
+                    | string  | service name                             |
+                    | string  | "publickey"                              |
+                    | boolean | TRUE                                     |
+                    | string  | public key algorithm name                |
+                    | string  | public key to be used for authentication |
+                    | string  | signature                                |
+                    
+                    * The value of 'signature' is a signature by the corresponding private key over the following data,
+                    	in the following order:
+                        | Type    | Value                                    |
+                        |---------|------------------------------------------|
+                        | string  | session identifier                       |
+                        | byte    | SSH_MSG_USERAUTH_REQUEST                 |
+                        | string  | user name                                |
+                        | string  | service name                             |
+                        | string  | "publickey"                              |
+                        | boolean | TRUE                                     |
+                        | string  | public key algorithm name                |
+                        | string  | public key to be used for authentication |
+
+            3. When the server receives the above 'signature' message, it MUST:
+                1. Check whether the supplied key is acceptable for authentication, and then whether the signature is correct
+                2. Respond with:
+                    1. SSH_MSG_USERAUTH_SUCCESS - if no more authentications are needed
+                    2. SSH_MSG_USERAUTH_FAILURE - if more authentications are needed OR the request failed
+
+                        
+    4. Authentication Method: "password"
+        1. Process
+            1. Client sends:
+                | Type    | Value    |
+                |---------|-------------------------------------|
+                | byte    | SSH_MSG_USERAUTH_REQUEST |
+                | string  | user name |
+                | string  | service name |
+                | string  | "password" |
+                | boolean  | FALSE |
+                | string  | plaintext password in ISO-10646 UTF-8 encoding [RFC 3629](https://datatracker.ietf.org/doc/html/rfc3629) |
+                * Conventions for password conversion should be followed as specified in the full summary
+            
+            2. Server responds with:
+                1. SSH_MSG_USERAUTH_SUCCESS - if authorization successful
+                2. SSH_MSG_USERAUTH_FAILURE - if authorization unsuccessful
+                3. SSH_MSG_USERAUTH_PASSWD_CHANGEREQ - if password has expired:
+                    | Type    | Value    |
+                    |---------|-------------------------------------|
+                    | byte    | SSH_MSG_USERAUTH_PASSWD_CHANGEREQ |
+                    | string  | prompt in ISO-10646 UTF-8 encoding [RFC 3629](https://datatracker.ietf.org/doc/html/rfc3629) |
+                    | string  | language tag [RFC 3066](https://datatracker.ietf.org/doc/html/rfc3066) |
+
+                    * If this message is sent, the Client MAY:
+                        1. Continue with a different auth method
+                        2. Request a new password from the user and retry password authentication with the following message:
+                            * <b>Note:</b> The Client may also send this message instead of the normal password authentication request
+                    	    without the server asking for it
+                            | Type    | Value    |
+                            |---------|-------------------------------------|
+                            | byte    | SSH_MSG_USERAUTH_REQUEST |
+                            | string    | user name |
+                            | string    | service name |
+                            | string    | "password" |
+                            | string  | plaintext old password in ISO-10646 UTF-8 encoding [RFC 3629](https://datatracker.ietf.org/doc/html/rfc3629) |
+                            | string  | plaintext new password in ISO-10646 UTF-8 encoding [RFC 3629](https://datatracker.ietf.org/doc/html/rfc3629) |
+            
+                            * The Server must reply to each request message with SSH_MSG_USERAUTH_SUCCESS, SSH_MSG_USERAUTH_FAILURE,
+                            or another SSH_MSG_USERAUTH_PASSWD_CHANGEREQ, which mean the following:
+                                1. SSH_MSG_USERAUTH_SUCCESS - The password has been changed, and authentication has been successfully
+                                    completed.
+                                    
+                                2. SSH_MSG_USERAUTH_FAILURE
+                                    1. with 'partial success' - The password has been changed, but more 
+                                    authentications are needed.
+                                    2. without 'partial success' - The password has not been changed.  Either
+                                    password changing was not supported, or the old password was bad.  Note that if the server has
+                                    already sent SSH_MSG_USERAUTH_PASSWD_CHANGEREQ, we know that it supports changing the password
+
+                                3. SSH_MSG_USERAUTH_CHANGEREQ - The password was not changed because the new password was not acceptable
+                                    (e.g., too easy to guess).
+
+        2. Method-specific Method Numbers
+            | Code                              | Value |
+            |-----------------------------------|-------|
+            | SSH_MSG_USERAUTH_PASSWD_CHANGEREQ | 60    |
+
 ## SSH-CONNECT
+
+* Runs on top of the SSH Transport and User Authentication Layers
+
+* SSH-CONNECT details the SSH Connection Protocol, which provides:
+    * Interactive login sessions
+    * Remote execution of commands
+    * Forwarded TCP/IP connections
+    * Forwarded X11 connections
+
+1. Global Requests
+    1. Message Format
+        | Type    | Value                         |
+        |---------|-------------------------------|
+        | byte    | SSH_MSG_GLOBAL_REQUEST        |
+        | string  | request name in US-ASCII only |
+        | boolean | want reply                    |
+        | ...     | request-specific data         |
+        * If want reply is:
+            1. TRUE - recipient of this message responds with either:
+                1. SSH_MSG_REQUEST_SUCCESS
+                    | Type    | Value                         |
+                    |---------|-------------------------------|
+                    | byte    | SSH_MSG_REQUEST_SUCCESS       |
+                    | ...     | response-specific data        |
+                    * Usually, 'response-specific data' is non-existent
+
+                2. SSH_MSG_REQUEST_FAILURE
+                    * Sent if the recipient does not recognize or support the request with the message:
+                    | Type    | Value                         |
+                    |---------|-------------------------------|
+                    | byte    | SSH_MSG_REQUEST_FAILURE       |
+                    * Only this failure byte is sent
+                
+                * In order to make it possible for the requestor to identify to which request each reply refers,
+                    it is REQUIRED that replies to SSH_MSG_GLOBAL_REQUESTS MUST be sent in the same order as the corresponding request messages.
+
+                * For channel requests, replies that relate to the same channel MUST also be replied to in the right order
+                    * However, channel requests for distinct channels MAY be replied to out-of-order
+
+            2. FALSE - recipient sends no response
+
+2. Channel Mechanism
+    * All terminal sessions, forwarded connections, etc... are channels
+    * Either side may open a channel
+    * Multiple channels are multiplexed into a single connection
+    * Channels are identified by numbers at each end
+        * The number referring to a channel may be different on each side
+        * Requests to open a channel contain the sender's channel number
+            * Any other channel-related messages contain the recipient's channel number for the channel
+    
+    * Channels are flow-controlled
+        * No data may be sent to a channel until a message is received to indicate that window space is available
+        
+    1. Opening a Channel
+        1. Requestor first:
+            1. Allocates a local number for the channel
+            2. Sends the following request to the Receiver:
+                | Type   | Value                              |
+                |--------|------------------------------------|
+                | byte   | SSH_MSG_CHANNEL_OPEN               |
+                | string | channel type in US-ASCII only      |
+                | uint32 | sender channel                     |
+                | uint32 | initial window size                |
+                | uint32 | maximum packet size                |
+                | ...    | channel type specific data follows |
+        
+        3. Receiver then responds with either:
+            1. SSH_MSG_CHANNEL_OPEN_CONFIRMATION
+                | Type   | Value                              |
+                |--------|------------------------------------|
+                | byte   | SSH_MSG_CHANNEL_OPEN_CONFIRMATION  |
+                | uint32 | recipient channel                  |
+                | uint32 | sender channel                     |
+                | uint32 | initial window size                |
+                | uint32 | maximum packet size                |
+                | ...    | channel type specific data follows |
+                * 'sender channel' is the channel number allocated by the Receiver
+                * 'recipient channel' is the channel number given in the original open request (also applies to the below message)
+            
+            2. SSH_MSG_CHANNEL_OPEN_FAILURE
+                | Type   | Value                                                                                               |
+                |--------|-----------------------------------------------------------------------------------------------------|
+                | byte   | SSH_MSG_CHANNEL_OPEN_FAILURE                                                                        |
+                | uint32 | recipient channel                                                                                   |
+                | uint32 | reason code                                                                                         |
+                | string | description in ISO-10646 UTF-8 encoding ([RFC 3629](https://datatracker.ietf.org/doc/html/rfc3629)) |
+                | string | language tag ([RFC 3066](https://datatracker.ietf.org/doc/html/rfc3066))                            |
+                * The Client MAY show the 'description' string to the user. If this is done, the Client software should take the precautions
+                    discussed in [SSH-ARCH](./SSH-ARCH.md)
+                
+                * 'reason code' values:
+                    | Symbolic Name                        | Reason Code |
+                    |--------------------------------------|-------------|
+                    | SSH_OPEN_ADMINISTRATIVELY_PROHIBITED | 1           |
+                    | SSH_OPEN_CONNECT_FAILED              | 2           |
+                    | SSH_OPEN_UNKNOWN_CHANNEL_TYPE        | 3           |
+                    | SSH_OPEN_RESOURCE_SHORTAGE           | 4           |
+                
+    2. Data Transfer
+        1. 'window size'
+            * Specifies how many bytes the other party can send before it must wait for the window to be adjusted
+            * Both parties use the following message to adjust the window:
+                | Type   | Value                         |
+                |--------|-------------------------------|
+                | byte   | SSH_MSG_CHANNEL_WINDOW_ADJUST |
+                | uint32 | recipient channel             |
+                | uint32 | bytes to add                  |
+                * After receiving this message, the recipient MAY send the given number of bytes more than it was previously allowed
+                    to send; the window size is increased
+                
+            * window sizes of up to 2<sup>32</sup> - 1 bytes MUST be supported
+                * The window size MUST NOT be increased above 2<sup>32</sup> - 1 bytes
+            
+        2. Data Transfer
+            1. Sending Data
+                | Type   | Value                |
+                |--------|----------------------|
+                | byte   | SSH_MSG_CHANNEL_DATA |
+                | uint32 | recipient channel    |
+                | string | data                 |
+                * 'window size' is decreased by the amount of data sent
+                * Both parties MAY ignore all extra data sent after the allowed window is empty
+
+                1. Data Payload Size
+                    * The maximum amount of data allowed is determined by whichever of the following is SMALLER:
+                        * Packet size for the channel
+                        * Current window size
+                    
+                    * There MUST exist some SSH Transport Layer packet size limit, and it MUST be >= 32768, as per [SSH-TRANS](./SSH-TRANS.md)
+                        * The implementation of the SSH Connection Layer MUST NOT:
+                            1. Advertise a maximum packet size that would result in Transport Layer packets larger than its Transport Layer is
+                                willing to receive
+                            2. Generate data packets larger than its Transport Layer is willing to send, EVEN IF the remote end would be willing to
+                                accept very large packets
+            
+                
+    3. Closing a Channel
+        * When a party will no longer send more data to a channel, it SHOULD send SSH_MSG_CHANNEL_EOF:
+            | Type   | Value               |
+            |--------|---------------------|
+            | byte   | SSH_MSG_CHANNEL_EOF |
+            | uint32 | recipient channel   |
+            * No explicit response is sent to this message
+                * However, the application may send EOF to whatever is at the other end of the channel
+
+            * Note that the channel remains open after this message. Thus, more data may be sent in the OTHER direction
+
+            * This message does not consume window space. Thus, it can be sent EVEN IF NO window space is available
+
+        1. Process
+            1.  When a party wishes to TERMINATE the channel, it sends SSH_MSG_CHANNEL_CLOSE:
+                | Type   | Value                 |
+                |--------|-----------------------|
+                | byte   | SSH_MSG_CHANNEL_CLOSE |
+                | uint32 | recipient channel     |
+            
+            2. The recipient party MUST send back an SSH_MSG_CHANNEL_CLOSE
+                | Type   | Value                 |
+                |--------|-----------------------|
+                | byte   | SSH_MSG_CHANNEL_CLOSE |
+                | uint32 | recipient channel     |
+            
+            * The channel is considered closed for a party when it has BOTH sent and received SSH_MSG_CHANNEL_CLOSE
+                * Once closed, the channel number may be reused
+
+            * A party MAY send this message (SSH_MSG_CHANNEL_CLOSE) without having sent or received SSH_MSG_CHANNEL_EOF
+            
+            * This message does not consume window space
+                * Thus, it can be sent EVEN IF NO window space is available
+
+    4. Channel-Specific Requests
+        
+
 ## SSH-NUMBERS

@@ -53,6 +53,7 @@ This is a summary of "The Secure Shell (SSH) Authentication Protocol" ([RFC 4252
     * Additional thoughts regarding authentication timeouts and retries may be found in [ssh-1.2.30](https://datatracker.ietf.org/doc/html/rfc4252#ref-ssh-1.2.30)
 
 5. Authentication Requests
+
     0. Authentication Requests
         * All authentication requests MUST use the following format
             * Only the first few fields are defined. Remaining fields depend on the authentication method

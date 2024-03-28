@@ -1,32 +1,50 @@
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpListener;
 
+use std::collections::HashMap;
 use std::env;
 use std::error::Error;
+
+fn parse_data(buf: &Vec<u8>) {
+
+}
+
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
     let addr = env::args().nth(1).unwrap_or_else(|| "127.0.0.1:22".to_string());
     let listener = TcpListener::bind(&addr).await?;
+
+    let connections: HashMap<&str, >
     println!("Listening on: {}", addr);
 
     loop {
         let (mut socket, _) = listener.accept().await?;
+        let (mut sock_read, mut sock_write) = socket.into_split();
+        
+        // Read thread
         tokio::spawn(async move {
             let mut buf = vec![0; 1024];
             'socket_handler: loop {
-                match socket.read(&mut buf).await {
+                let output = match sock_read.read(&mut buf).await {
                     Ok(n) => match n {
-
+                        0 => break 'socket_handler,
+                        _ => {
+                            parse_data(&buf)
+                        }
                     },
-                    Err() => break 'socket_handler
-                }
-                if n == 0 { return; }
-                socket
-                    .write_all(&buf[0..n])
-                    .await
-                    .expect("failed to write data to socket");
+                    Err(_) => break 'socket_handler
+                };
+                println!("{:?}", buf);
             }
+        });
+
+        // Write thread
+        tokio::spawn(async move {
+            match sock_write.write(b"Hello there!").await {
+                Ok(n) => { dbg!("Wrote {} bytes", n); },
+                Err(err) => { dbg!("{:?}", err); }
+            };
         });
     }
 }

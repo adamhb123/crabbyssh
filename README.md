@@ -21,3 +21,6 @@ TODO
 * [SSH-USERAUTH](https://datatracker.ietf.org/doc/html/rfc4252)
 * [SSH-CONNECT](https://datatracker.ietf.org/doc/html/rfc4254)
 * [SSH-NUMBERS](https://datatracker.ietf.org/doc/html/rfc4250)
+
+## References (non-RFC)
+* Paramiko (SSH implementation; Python) - https://github.com/paramiko/paramiko

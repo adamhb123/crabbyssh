@@ -23,4 +23,4 @@ TODO
 * [SSH-NUMBERS](https://datatracker.ietf.org/doc/html/rfc4250)
 
 ## References (non-RFC)
-* Paramiko (SSH implementation; Python) - https://github.com/paramiko/paramiko
+* [Paramiko](https://github.com/paramiko/paramiko) - (SSH implementation; Python)

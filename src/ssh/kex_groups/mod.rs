@@ -2,10 +2,16 @@ use hex_literal::hex;
 use num_bigint::{BigUint, RandBigInt};
 use rand;
 
+/* 
+    The Diffie-Hellman key exchange provides a shared secret that can not be
+    determined by either party alone. The key exchange is combined with a
+    signature with the host key to provide host authentication.
+*/
+
 // https://datatracker.ietf.org/doc/html/draft-ietf-secsh-transport-09.txt#section-6
 pub struct DiffieHellmanGroup {
-    pub p: &'static [u8], // Prime
-    pub g: usize,         // Generator
+    pub p: &'static [u8], // Prime (each group defines a shared prime)
+    pub g: usize,         // Generator (each group defines a shared generator)
     pub exp_size: u64,
 }
 pub const DH_GROUP_1: DiffieHellmanGroup = DiffieHellmanGroup {
@@ -109,21 +115,26 @@ impl DiffieHellman {
         self.public_key.clone()
     }
     pub fn compute_shared_secret(&mut self, other_public_key: BigUint) -> BigUint {
+        // = (other_public_key ^ self.private_key) % self.p
         self.shared_secret = other_public_key.modpow(&self.private_key, &self.p);
         self.shared_secret.clone()
     }
     pub fn validate_shared_secret(&self, shared_secret: &BigUint) -> bool {
+        // shared_secret must be BOTH:
+        //      A. greater than 1
+        //      B. less than self.p - 1 (i.e., dh group's shared prime - 1)
         let one = BigUint::from(1u8);
-        let p_minus_one = &self.p - &one;
-        shared_secret > &one && shared_secret < &p_minus_one
+        shared_secret > &one && shared_secret < &(&self.p - &one)
     }
     pub fn decode_public_key(buffer: &[u8]) -> BigUint {
+        // Converts public key slice to BigUint
         BigUint::from_bytes_be(buffer)
     }
     pub fn validate_public_key(&self, public_key: &BigUint) -> bool {
+        // Public key MUST be BOTH:
+        //      A. Greater than 1
+        //      B. Less than p (group prime) - 1
         let one = BigUint::from(1u8);
-        let p_minus_one = &self.p - &one;
-
-        public_key > &one && public_key < &p_minus_one
+        public_key > &one && public_key < &(&self.p - &one)
     }
 }

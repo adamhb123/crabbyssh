@@ -37,5 +37,8 @@ fn ssh_kex_groups() {
     println!("\t\t server computed shared secret == client computed shared secret: {}", equality_checks.0);
     println!("\t\t dhg1_server.validate_shared_secret: {}", equality_checks.1);
     println!("\t\t dhg1_client.validate_shared_secret: {}", equality_checks.2);
+    assert_eq!(equality_checks.0, true);
+    assert_eq!(equality_checks.1, true);
+    assert_eq!(equality_checks.2, true);
 
 }

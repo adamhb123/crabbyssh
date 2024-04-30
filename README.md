@@ -24,3 +24,4 @@ TODO
 
 ## References (non-RFC)
 * [Paramiko](https://github.com/paramiko/paramiko) - (SSH implementation; Python)
+* [SSH Handshake Explained](https://goteleport.com/blog/ssh-handshake-explained/)

@@ -8,7 +8,7 @@ This is a summary of "The Secure Shell (SSH) Authentication Protocol" ([RFC 4252
     authenticated tunnel for the SSH Connection Protocol [SSH-CONNECT](SSH-CONNECT.md)
 
 1. Introduction
-    * This protocol is a general-purpose user authentication protocol, intended to be run over the SSH Tranport Layer
+    * This protocol is a general-purpose user authentication protocol, intended to be run over the SSH Transport Layer
     Protocol [SSH-TRANS](SSH-TRANS.md)
     * This protocol assumes that the underlying protocols provide integrity and confidentialty protection
     * This document should be read only after reading the SSH architecture document [SSH-ARCH](SSH-ARCH.md)
@@ -29,7 +29,7 @@ This is a summary of "The Secure Shell (SSH) Authentication Protocol" ([RFC 4252
     * See document
 
 4. The Authentication Protocol Framework
-    * The Server drives the authentication by telling the client which authentication methods can be used to continue the exchange at any given time
+    * The Server drives the authentication by telling the Client which authentication methods can be used to continue the exchange at any given time
     * The Client has the freedom to try the methods listed by the Server in ANY order
     * This gives the Server complete control over the authentication process if desired, but also gives enough
     flexibility for the Client to use the methods it supports or that are most convenient for the user, when multiple

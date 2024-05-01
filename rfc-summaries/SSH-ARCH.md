@@ -20,7 +20,7 @@ This is a summary of "The Secure Shell (SSH) Protocol Architecture" ([RFC 4251](
         * Runs over the Transport Layer Protocol (SSH-TRANS)
     
     3. The Connection Protocol (SSH-CONNECT)
-        * Multiplexes the encrypted tunnel into several logical chnanels
+        * Multiplexes the encrypted tunnel into several logical channels
         * Runs over the User Authentication Protocol (SSH-USERAUTH)
     
     The Client sends a service request once a secure Transport Layer Connection has

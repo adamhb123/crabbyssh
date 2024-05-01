@@ -14,7 +14,7 @@ This is a summary of "The Secure Shell (SSH) Connection Protocol" ([RFC 4254](ht
     * This protocol has been designed to run on top of the SSH Transport Layer ([SSH-TRANS](./SSH-TRANS.md)) and User Authentication ([SSH-USERAUTH](./SSH-USERAUTH.md))
 
 1. Introduction
-    * This protocol has been designed to run on top of the SSH Transport Layer ([SSH-TRANS](./SSH-TRANS.md)) and User Authentication ([SSH-USERAUTH](./SSH-USERAUTH.md))
+    * This protocol has been designed to run on top of the SSH Transport Layer ([SSH-TRANS](./SSH-TRANS.md)) and User Authentication layer([SSH-USERAUTH](./SSH-USERAUTH.md))
 
     * The 'service name' for this protocol is "ssh-connection"
 
@@ -80,7 +80,7 @@ This is a summary of "The Secure Shell (SSH) Connection Protocol" ([RFC 4254](ht
             * No data may be sent to a channel until a message is received to indicate that window space is available
 
     1. Opening a Channel
-        * When either side wishes to open a new channel, it;
+        * When either side wishes to open a new channel, it:
             1. Allocates a local number for the channel
             2. Sends the following message to the other side:
                 | Type   | Value                              |
@@ -186,7 +186,7 @@ This is a summary of "The Secure Shell (SSH) Connection Protocol" ([RFC 4254](ht
             * Implementations MUST correctly handle window sizes of up to 2<sup>32</sup> - 1 bytes
                 * The window size MUST NOT be increased above 2<sup>32</sup> - 1 bytes
 
-        * Data transfer is done with messages of the following type:
+        * Data transfer is performed with messages of the following type:
             | Type   | Value                |
             |--------|----------------------|
             | byte   | SSH_MSG_CHANNEL_DATA |

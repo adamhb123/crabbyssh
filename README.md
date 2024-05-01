@@ -1,8 +1,9 @@
 # CrabbySSH
 Rust implementation of SSH, along with a group of MARKDOWN documents summarizing the relevant RFCs
-## Method
-TODO
 
+## Usage
+Currently, only DH shared secret generation is implemented. Use the following command to see this in action:
+> cargo test ssh_kex_groups -- --show-output
 
 
 ## SSH RFC Collection
@@ -24,3 +25,4 @@ TODO
 
 ## References (non-RFC)
 * [Paramiko](https://github.com/paramiko/paramiko) - (SSH implementation; Python)
+* [SSH Handshake Explained](https://goteleport.com/blog/ssh-handshake-explained/)
